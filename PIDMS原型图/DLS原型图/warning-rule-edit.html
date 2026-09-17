@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>施工管理 - 编辑预警规则</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .threshold-config {
+            margin-top: 20px;
+            padding: 16px;
+            background-color: #fafafa;
+            border-radius: 8px;
+        }
+        
+        .threshold-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 16px;
+        }
+        
+        .threshold-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        
+        .threshold-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .threshold-level {
+            width: 60px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .threshold-level.green {
+            background-color: #f6ffed;
+            color: #52c41a;
+            border: 1px solid #b7eb8f;
+        }
+        
+        .threshold-level.yellow {
+            background-color: #fff7e6;
+            color: #fa8c16;
+            border: 1px solid #ffd591;
+        }
+        
+        .threshold-level.red {
+            background-color: #fff1f0;
+            color: #f5222d;
+            border: 1px solid #ffccc7;
+        }
+        
+        .threshold-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        
+        .threshold-desc {
+            flex: 2;
+            padding: 8px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        
+        .add-threshold-btn {
+            margin-top: 12px;
+            padding: 8px 16px;
+            background-color: #f5f5f5;
+            border: 1px dashed #d9d9d9;
+            border-radius: 4px;
+            color: #999;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .add-threshold-btn:hover {
+            background-color: #f0f0f0;
+            border-color: #1890ff;
+            color: #1890ff;
+        }
+        
+        .warning-type-options {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .warning-type-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .warning-type-option:hover {
+            background-color: #e8f4fd;
+        }
+        
+        .warning-type-option input[type="radio"]:checked + span {
+            color: #1890ff;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>企业管理系统</h1>
+            </div>
+                                                                                                                        <nav class="menu">
+                <div class="menu-item">
+                    <span class="menu-title">项目管理</span>
+                    <ul class="submenu">
+                        <li><a href="project.html">项目</a></li>
+                        <li><a href="seal-application.html">用印申请</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item active">
+                    <span class="menu-title">施工管理</span>
+                    <ul class="submenu">
+                        <li><a href="progress-management.html">进度管理</a></li>
+                        <li><a href="quality-inspection.html">质量检查</a></li>
+                        <li><a href="quality-rectification.html">质量整改单</a></li>
+                        <li><a href="safety-inspection.html">安全检查</a></li>
+                        <li><a href="safety-rectification.html">安全整改单</a></li>
+                        <li><a href="construction-log.html">施工日志</a></li>
+                        <li><a href="visualization.html">可视化管理</a></li>
+                        <li><a href="warning-rule.html" class="active">预警规则</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">基础管理</span>
+                    <ul class="submenu">
+                        <li><a href="basic-info.html">基础资料</a></li>
+                        <li><a href="customer.html">客户</a></li>
+                        <li><a href="supplier.html">供应商</a></li>
+                        <li><a href="internal-unit.html">内部单位</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">系统管理</span>
+                    <ul class="submenu">
+                        <li><a href="personnel.html">人员管理</a></li>
+                        <li><a href="organization.html">机构管理</a></li>
+                        <li><a href="role-management.html">角色管理</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+        
+        <main class="main-content">
+            <header class="header">
+                <div class="header-left">
+                    <h2>施工管理 / 预警规则 / 编辑</h2>
+                </div>
+                <div class="header-right">
+                    <div class="header-buttons">
+                        <button class="btn" onclick="window.location.href='warning-rule.html'">返回</button>
+                    </div>
+                </div>
+            </header>
+            
+            <div class="content-wrapper">
+                <div class="form-card">
+                    <form>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>规则名称 <span class="required">*</span></label>
+                                <input type="text" value="蒙特雷项目进度预警规则" required>
+                            </div>
+                            <div class="form-group">
+                                <label>对应项目 <span class="required">*</span></label>
+                                <select required>
+                                    <option value="">请选择项目</option>
+                                    <option value="monterey6" selected>墨西哥蒙特雷地铁6号线延长线项目</option>
+                                    <option value="monterey4">墨西哥蒙特雷地铁4、6号线项目</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>对应计划名称 <span class="required">*</span></label>
+                                <input type="text" value="施工进度计划" required>
+                            </div>
+                            <div class="form-group">
+                                <label>进度百分比</label>
+                                <input type="number" value="57.42" min="0" max="100">
+                            </div>
+                            <div class="form-group">
+                                <label>触发时间 <span class="required">*</span></label>
+                                <input type="datetime-local" value="2025-07-07T09:00" required>
+                            </div>
+                            <div class="form-group">
+                                <label>进度偏差阈值 (%) <span class="required">*</span></label>
+                                <input type="number" value="5" min="0" max="100" required>
+                            </div>
+                            <div class="form-group full-width">
+                                <label>预警类型 <span class="required">*</span></label>
+                                <div class="warning-type-options">
+                                    <label class="warning-type-option">
+                                        <input type="radio" name="warningType" value="progress" checked>
+                                        <span>进度停滞预警</span>
+                                    </label>
+                                    <label class="warning-type-option">
+                                        <input type="radio" name="warningType" value="quality">
+                                        <span>质量问题预警</span>
+                                    </label>
+                                    <label class="warning-type-option">
+                                        <input type="radio" name="warningType" value="safety">
+                                        <span>安全隐患预警</span>
+                                    </label>
+                                    <label class="warning-type-option">
+                                        <input type="radio" name="warningType" value="cost">
+                                        <span>成本超支预警</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group full-width">
+                                <label>分级提醒规则配置</label>
+                                <div class="threshold-config">
+                                    <div class="threshold-title">多段式比例分级提醒</div>
+                                    <div class="threshold-row">
+                                        <div class="threshold-level green">正常</div>
+                                        <input type="text" class="threshold-input" value="实际进度 ≥ 计划进度 95%">
+                                        <input type="text" class="threshold-desc" value="项目进展正常，无需预警">
+                                    </div>
+                                    <div class="threshold-row">
+                                        <div class="threshold-level yellow">黄色</div>
+                                        <input type="text" class="threshold-input" value="连续2周实际进度为0">
+                                        <input type="text" class="threshold-desc" value="项目进度停滞，需关注">
+                                    </div>
+                                    <div class="threshold-row">
+                                        <div class="threshold-level red">红色</div>
+                                        <input type="text" class="threshold-input" value="连续3周及以上实际进度为0">
+                                        <input type="text" class="threshold-desc" value="项目进度严重停滞，需立即处理">
+                                    </div>
+                                    <button type="button" class="add-threshold-btn">+ 添加分级</button>
+                                </div>
+                            </div>
+                            <div class="form-group full-width">
+                                <label>备注</label>
+                                <textarea>基于工作日志实际进度和计划进度数据校验触发预警</textarea>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn primary">保存</button>
+                            <button type="button" class="btn" onclick="window.location.href='warning-rule.html'">取消</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+﻿﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>供应商详单- 企业管理系统</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>企业管理系统</h1>
+            </div>
+                                                                                                                                                                                                            <nav class="menu">
+                <div class="menu-item">
+                    <span class="menu-title">项目管理</span>
+                    <ul class="submenu">
+                        <li><a href="project.html">项目</a></li>
+                        <li><a href="seal-application.html">用印申请</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">施工管理</span>
+                    <ul class="submenu">
+                        <li><a href="progress-management.html">进度管理</a></li>
+                        <li><a href="quality-inspection.html">质量检查</a></li>
+                        <li><a href="quality-rectification.html">质量整改单</a></li>
+                        <li><a href="safety-inspection.html">安全检查</a></li>
+                        <li><a href="safety-rectification.html">安全整改单</a></li>
+                        <li><a href="construction-log.html">施工日志</a></li>
+                        <li><a href="visualization.html">可视化管理</a></li>
+                        <li><a href="warning-rule.html">预警规则</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item active">
+                    <span class="menu-title">基础管理</span>
+                    <ul class="submenu">
+                        <li><a href="basic-info.html">基础资料</a></li>
+                        <li><a href="customer.html">客户</a></li>
+                        <li><a href="supplier.html" class="active">供应商</a></li>
+                        <li><a href="internal-unit.html">内部单位</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">系统管理</span>
+                    <ul class="submenu">
+                        <li><a href="personnel.html">人员管理</a></li>
+                        <li><a href="organization.html">机构管理</a></li>
+                        <li><a href="role-management.html">角色管理</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+        <main class="main-content">
+            <header class="header">
+                <div class="header-left">
+                    <h2>基础管理 / 供应商</ 详情</h2>
+                </div>
+                <div class="header-right">
+                <div class="header-buttons">
+                    <button class="btn" onclick="window.location.href='supplier.html'">返回</button>
+                </div>
+            </header>
+            <div class="form-card">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>供应商名单</label>
+                        <div class="form-value">XX建材有限公司</div>
+                    </div>
+                    <div class="form-group">
+                        <label>未分类</label>
+                        <div class="form-value">材料供应商</div>
+                    </div>
+                    <div class="form-group">
+                        <label>联系单</label>
+                        <div class="form-value">王经单</div>
+                    </div>
+                    <div class="form-group">
+                        <label>联系电话</label>
+                        <div class="form-value">13900139001</div>
+                    </div>
+                    <div class="form-group">
+                        <label>办公地址</label>
+                        <div class="form-value">XX市XX区XX路XX单</div>
+                    </div>
+                    <div class="form-group">
+                        <label>状态</label>
+                        <div class="form-value"><span class="status-tag success">启用</span></div>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>备注</label>
+                        <div class="form-value">长期合作供应商</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

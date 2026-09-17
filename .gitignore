@@ -1,0 +1,42 @@
+# ===== 依赖 / 构建产物 =====
+node_modules/
+dist/
+target/
+build/
+*.class
+*.jar
+*.war
+
+# ===== 日志 / 缓存 =====
+*.log
+logs/
+.cache/
+.vite/
+
+# ===== IDE / 编辑器 =====
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+Thumbs.db
+
+# ===== Vite 临时文件 =====
+vite.config.js.timestamp-*.mjs
+
+# ===== 临时 / 测试产物 =====
+_writetest.txt
+*.tmp
+*.bak
+*~
+
+# ===== 本地配置（含数据库口令，不入库） =====
+# 提交 application.yml.example 作为模板，本地复制为 application.yml 后填写
+application.yml
+application-local.yml
+application-dev.yml
+application-prod.yml
+*.local.yml
+.env
+.env.*

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>施工管理 - 预警规则</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .rule-card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        
+        .rule-header {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #fafafa;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .rule-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .rule-type {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            font-size: 12px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+        
+        .rule-type.yellow {
+            background-color: #fff7e6;
+            color: #fa8c16;
+        }
+        
+        .rule-type.red {
+            background-color: #fff1f0;
+            color: #f5222d;
+        }
+        
+        .rule-status {
+            font-size: 12px;
+            color: #52c41a;
+        }
+        
+        .rule-status.disabled {
+            color: #999;
+        }
+        
+        .rule-body {
+            padding: 16px 20px;
+        }
+        
+        .rule-info-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-bottom: 12px;
+        }
+        
+        .rule-info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .rule-info-label {
+            font-size: 13px;
+            color: #999;
+        }
+        
+        .rule-info-value {
+            font-size: 13px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .rule-threshold {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed #e8e8e8;
+        }
+        
+        .threshold-title {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .threshold-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        
+        .threshold-item {
+            padding: 6px 12px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .threshold-item.yellow {
+            background-color: #fff7e6;
+            border-left: 3px solid #fa8c16;
+        }
+        
+        .threshold-item.red {
+            background-color: #fff1f0;
+            border-left: 3px solid #f5222d;
+        }
+        
+        .threshold-item.green {
+            background-color: #f6ffed;
+            border-left: 3px solid #52c41a;
+        }
+        
+        .rule-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .rule-action-btn {
+            color: #1890ff;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        
+        .rule-action-btn:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>企业管理系统</h1>
+            </div>
+                                                                                                                        <nav class="menu">
+                <div class="menu-item">
+                    <span class="menu-title">项目管理</span>
+                    <ul class="submenu">
+                        <li><a href="project.html">项目</a></li>
+                        <li><a href="seal-application.html">用印申请</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item active">
+                    <span class="menu-title">施工管理</span>
+                    <ul class="submenu">
+                        <li><a href="progress-management.html">进度管理</a></li>
+                        <li><a href="quality-inspection.html">质量检查</a></li>
+                        <li><a href="quality-rectification.html">质量整改单</a></li>
+                        <li><a href="safety-inspection.html">安全检查</a></li>
+                        <li><a href="safety-rectification.html">安全整改单</a></li>
+                        <li><a href="construction-log.html">施工日志</a></li>
+                        <li><a href="visualization.html">可视化管理</a></li>
+                        <li><a href="warning-rule.html" class="active">预警规则</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">基础管理</span>
+                    <ul class="submenu">
+                        <li><a href="basic-info.html">基础资料</a></li>
+                        <li><a href="customer.html">客户</a></li>
+                        <li><a href="supplier.html">供应商</a></li>
+                        <li><a href="internal-unit.html">内部单位</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">系统管理</span>
+                    <ul class="submenu">
+                        <li><a href="personnel.html">人员管理</a></li>
+                        <li><a href="organization.html">机构管理</a></li>
+                        <li><a href="role-management.html">角色管理</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+        
+        <main class="main-content">
+            <header class="header">
+                <div class="header-left">
+                    <h2>施工管理 / 预警规则</h2>
+                </div>
+                <div class="header-right">
+                    <div class="search-box">
+                        <input type="text" placeholder="输入关键字进行搜索">
+                        <button>搜索</button>
+                    </div>
+                    <div class="header-buttons">
+                        <button class="btn">导出</button>
+                        <button class="btn primary" onclick="window.location.href='warning-rule-add.html'">+ 新增</button>
+                    </div>
+                </div>
+            </header>
+            
+            <div class="content-wrapper">
+                <div class="rule-card">
+                    <div class="rule-header">
+                        <div class="rule-header-left">
+                            <span class="rule-name">蒙特雷项目进度预警规则</span>
+                            <span class="rule-type yellow">黄色预警</span>
+                        </div>
+                        <span class="rule-status">已启用</span>
+                    </div>
+                    <div class="rule-body">
+                        <div class="rule-info-row">
+                            <div class="rule-info-item">
+                                <span class="rule-info-label">对应项目：</span>
+                                <span class="rule-info-value">墨西哥蒙特雷地铁6号线延长线项目</span>
+                            </div>
+                            <div class="rule-info-item">
+                                <span class="rule-info-label">对应计划：</span>
+                                <span class="rule-info-value">施工进度计划</span>
+                            </div>
+                            <div class="rule-info-item">
+                                <span class="rule-info-label">触发时间：</span>
+                                <span class="rule-info-value">每周一 09:00</span>
+                            </div>
+                        </div>
+                        <div class="rule-info-row">
+                            <div class="rule-info-item">
+                                <span class="rule-info-label">进度偏差阈值：</span>
+                                <span class="rule-info-value">5%</span>
+                            </div>
+                            <div class="rule-info-item">
+                                <span class="rule-info-label">预警类型：</span>
+                                <span class="rule-info-value">进度停滞预警</span>
+                            </div>
+                        </div>
+                        <div class="rule-threshold">
+                            <div class="threshold-title">分级提醒规则：</div>
+                            <div class="threshold-list">
+                                <div class="threshold-item green">实际进度 ≥ 计划进度 95% - 正常</div>
+                                <div class="threshold-item yellow">连续2周实际进度为0 - 黄色预警</div>
+                                <div class="threshold-item red">连续3周及以上实际进度为0 - 红色预警</div>
+                            </div>
+                        </div>
+                        <div class="rule-actions">
+                            <a href="warning-rule-edit.html" class="rule-action-btn">编辑</a>
+                            <a href="#" class="rule-action-btn">删除</a>
+                            <a href="#" class="rule-action-btn">禁用</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="rule-card">
+                    <div class="rule-header">
+                        <div class="rule-header-left">
+                            <span class="rule-name">蒙特雷项目质量预警规则</span>
+                            <span class="rule-type red">红色预警</span>
+                        </div>
+                        <span class="rule-status">已启用</span>
+                    </div>
+                    <div class="rule-body">
+                        <div class="rule-info-row">
+                            <div class="rule-info-item">
+                                <span class="rule-info-label">对应项目：</span>
+                                <span class="rule-info-value">墨西哥蒙特雷地铁4、6号线项目</span>
+                            </div>
+                            <div class="rule-info-item">
+                                <span class="rule-info-label">对应计划：</span>
+                                <span class="rule-info-value">质量检查计划</span>
+                            </div>
+                            <div class="rule-info-item">
+                                <span class="rule-info-label">触发时间：</span>
+                                <span class="rule-info-value">每周五 17:00</span>
+                            </div>
+                        </div>
+                        <div class="rule-info-row">
+                            <div class="rule-info-item">
+                                <span class="rule-info-label">进度偏差阈值：</span>
+                                <span class="rule-info-value">10%</span>
+                            </div>
+                            <div class="rule-info-item">
+                                <span class="rule-info-label">预警类型：</span>
+                                <span class="rule-info-value">质量问题预警</span>
+                            </div>
+                        </div>
+                        <div class="rule-threshold">
+                            <div class="threshold-title">分级提醒规则：</div>
+                            <div class="threshold-list">
+                                <div class="threshold-item green">质量合格率 ≥ 95% - 正常</div>
+                                <div class="threshold-item yellow">质量合格率 80%-95% - 黄色预警</div>
+                                <div class="threshold-item red">质量合格率 < 80% - 红色预警</div>
+                            </div>
+                        </div>
+                        <div class="rule-actions">
+                            <a href="warning-rule-edit.html" class="rule-action-btn">编辑</a>
+                            <a href="#" class="rule-action-btn">删除</a>
+                            <a href="#" class="rule-action-btn">禁用</a>
+                        </div>
+                    </div>
+                </div>
+                    

@@ -1,0 +1,18 @@
+# 配置模板 —— 复制为 application.yml 后按本地环境填写
+# application.yml 已在 .gitignore 中排除，不会提交到版本库
+#
+# 也可以不复制文件，直接通过环境变量注入：
+#   DB_URL / DB_USERNAME / DB_PASSWORD
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/pidms?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: com.pidms.pidmsbackend.entity
+  configuration:
+    map-underscore-to-camel-case: true

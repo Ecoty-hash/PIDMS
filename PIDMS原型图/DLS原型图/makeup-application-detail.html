@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>补卡申请详情 - 企业管理系统</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .detail-container {
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 20px;
+            border-radius: 4px;
+            max-height: calc(100vh - 180px);
+            overflow-y: auto;
+        }
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .detail-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .detail-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .detail-button {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .detail-button.primary {
+            background-color: #1890ff;
+            color: #fff;
+            border-color: #1890ff;
+        }
+        .content-spacer {
+            height: 20px;
+        }
+        .info-section {
+            margin-bottom: 30px;
+        }
+        .info-section h3 {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .info-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .info-value {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+        .remarks-content {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #1890ff;
+        }
+        .status-tag {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-tag.success {
+            background-color: #f6ffed;
+            color: #52c41a;
+            border: 1px solid #b7eb8f;
+        }
+        .status-tag.pending {
+            background-color: #fffbe6;
+            color: #faad14;
+            border: 1px solid #ffe58f;
+        }
+        .header { margin-top: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>企业管理系统</h1>
+            </div>
+                                                                        <nav class="menu">
+                <div class="menu-item">
+                    <span class="menu-title">项目管理</span>
+                    <ul class="submenu">
+                        <li><a href="project.html">项目</a></li>
+                        <li><a href="seal-application.html">用印申请</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">施工管理</span>
+                    <ul class="submenu">
+                        <li><a href="progress-management.html">进度管理</a></li>
+                        <li><a href="quality-inspection.html">质量检查</a></li>
+                        <li><a href="quality-rectification.html">质量整改单</a></li>
+                        <li><a href="safety-inspection.html">安全检查</a></li>
+                        <li><a href="safety-rectification.html">安全整改单</a></li>
+                        <li><a href="construction-log.html">施工日志</a></li>
+                        <li><a href="visualization.html">可视化管理</a></li>
+                        <li><a href="warning-rule.html">预警规则</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item active">
+                    <span class="menu-title">基础管理</span>
+                    <ul class="submenu">
+                        <li><a href="basic-info.html" class="active">基础资料</a></li>
+                        <li><a href="customer.html">客户</a></li>
+                        <li><a href="supplier.html">供应商</a></li>
+                        <li><a href="internal-unit.html">内部单位</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">系统管理</span>
+                    <ul class="submenu">
+                        <li><a href="personnel.html">人员管理</a></li>
+                        <li><a href="organization.html">机构管理</a></li>
+                        <li><a href="role-management.html">角色管理</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+        <main class="main-content">
+            <header class="header">
+                <div class="header-left">
+                    <h2>人事考勤 / 补卡申请详情</h2>
+                </div>
+                <div class="header-right">
+                    <div class="header-buttons">
+                        <button class="btn" onclick="window.location.href='makeup-application.html'">返回</button>
+                        <button class="btn primary" onclick="window.location.href='makeup-application-edit.html'">编辑</button>
+                    </div>
+                </div>
+            </header>
+            <div class="detail-container">
+                <div class="content-spacer"></div>
+                <div class="detail-header">
+                    <h1 class="detail-title">补卡申请详情</h1>
+                    <div class="detail-actions">
+                        <button class="detail-button">分享</button>
+                        <button class="detail-button">打印</button>
+                        <button class="detail-button">导出</button>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h3>基本信息</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">申请单号</span>
+                            <span class="info-value">MA202503200001</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">申请人</span>
+                            <span class="info-value">张三</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">缺卡日期</span>
+                            <span class="info-value">2025-03-20</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">缺卡类型</span>
+                            <span class="info-value">上班卡</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">缺卡时间</span>
+                            <span class="info-value">09:00</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">审批状态</span>
+                            <span class="info-value"><span class="status-tag success">已通过</span></span>
+                        </div>
+                        <div class="info-item full-width">
+                            <span class="info-label">补卡原因</span>
+                            <span class="info-value">忘记打卡</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">证明人</span>
+                            <span class="info-value">李四</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">申请时间</span>
+                            <span class="info-value">2025-03-20 08:30:00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

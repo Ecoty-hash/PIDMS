@@ -1,0 +1,288 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>施工管理 - 新增质量检查</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .content-wrapper {
+            padding: 20px;
+        }
+        
+        .form-card {
+            padding: 30px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 4px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .form-group label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: #1890ff;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .form-group .required {
+            color: #ff4d4f;
+            margin-left: 4px;
+        }
+        
+        .upload-area {
+            border: 1px dashed #ddd;
+            border-radius: 4px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        
+        .upload-area:hover {
+            border-color: #1890ff;
+        }
+        
+        .upload-area input {
+            display: none;
+        }
+        
+        .upload-area p {
+            color: #999;
+            font-size: 14px;
+            margin: 0;
+        }
+        .header { margin-top: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>企业管理系统</h1>
+            </div>
+                                                                                                                                                                                                            <nav class="menu">
+                <div class="menu-item">
+                    <span class="menu-title">项目管理</span>
+                    <ul class="submenu">
+                        <li><a href="project.html">项目</a></li>
+                        <li><a href="seal-application.html">用印申请</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item active">
+                    <span class="menu-title">施工管理</span>
+                    <ul class="submenu">
+                        <li><a href="progress-management.html">进度管理</a></li>
+                        <li><a href="quality-inspection.html" class="active">质量检查</a></li>
+                        <li><a href="quality-rectification.html">质量整改单</a></li>
+                        <li><a href="safety-inspection.html">安全检查</a></li>
+                        <li><a href="safety-rectification.html">安全整改单</a></li>
+                        <li><a href="construction-log.html">施工日志</a></li>
+                        <li><a href="visualization.html">可视化管理</a></li>
+                        <li><a href="warning-rule.html">预警规则</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">基础管理</span>
+                    <ul class="submenu">
+                        <li><a href="basic-info.html">基础资料</a></li>
+                        <li><a href="customer.html">客户</a></li>
+                        <li><a href="supplier.html">供应商</a></li>
+                        <li><a href="internal-unit.html">内部单位</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">系统管理</span>
+                    <ul class="submenu">
+                        <li><a href="personnel.html">人员管理</a></li>
+                        <li><a href="organization.html">机构管理</a></li>
+                        <li><a href="role-management.html">角色管理</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <div class="header-left">
+                    <h2>施工管理 / 新增质量检查</h2>
+                </div>
+                <div class="header-right">
+                    <div class="header-buttons">
+                        <button class="btn" onclick="window.location.href='quality-inspection.html'">返回</button>
+                        <button class="btn primary" type="submit" form="qualityForm">保存</button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-wrapper">
+                                <form>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>项目名称 <span class="required">*</span></label>
+                            <select required>
+                                <option value="">请选择项目</option>
+                                <option value="1">墨西哥蒙特雷地铁6号线</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>检查单号</label>
+                            <input type="text" placeholder="请输入检查单号">
+                        </div>
+                        <div class="form-group">
+                            <label>检查类型 <span class="required">*</span></label>
+                            <select required>
+                                <option value="">请选择</option>
+                                <option value="quality">质量检查</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>检查部门 <span class="required">*</span></label>
+                            <select required>
+                                <option value="">请选择</option>
+                                <option value="1">质检部</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>检查日期 <span class="required">*</span></label>
+                            <input type="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>检查部位</label>
+                            <input type="text" placeholder="请输入检查部位">
+                        </div>
+                        <div class="form-group">
+                            <label>检查结果 <span class="required">*</span></label>
+                            <select required>
+                                <option value="">请选择</option>
+                                <option value="pass">合格</option>
+                                <option value="fail">不合格</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label>检查详情</label>
+                        <textarea placeholder="请输入检查详情"></textarea>
+                    </div>
+                    
+                    <div class="form-group full-width" style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <label>检查明细</label>
+                            <button type="button" class="btn" style="padding: 4px 12px; font-size: 13px;" onclick="addQualityRow()">+ 添加明细</button>
+                        </div>
+                        <table class="detail-table" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background-color: #f5f5f5;">
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 13px;">序号</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 13px;">检查项目</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 13px;">检查结果</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 13px;">备注</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 13px;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="qualityTableBody">
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 8px; font-size: 13px;">1</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;"><input type="text" placeholder="请输入检查项目" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;"></td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">
+                                        <select style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+                                            <option>合格</option>
+                                            <option>不合格</option>
+                                        </select>
+                                    </td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;"><input type="text" placeholder="请输入备注" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;"></td>
+                                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;"><button type="button" onclick="removeRow(this)" style="border: none; background: none; color: #ff4d4f; cursor: pointer;">删除</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">保存</button>
+                        <button type="button" class="btn" onclick="window.location.href='quality-inspection.html'">取消</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+    <script>
+        document.getElementById('qualityForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            window.location.href = 'quality-inspection.html';
+        });
+        
+        function addQualityRow() {
+            var tbody = document.getElementById('qualityTableBody');
+            var rows = tbody.getElementsByTagName('tr');
+            var index = rows.length + 1;
+            
+            var tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="border: 1px solid #ddd; padding: 8px; font-size: 13px;">${index}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;"><input type="text" placeholder="请输入检查项目" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;"></td>
+                <td style="border: 1px solid #ddd; padding: 8px;">
+                    <select style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option>合格</option>
+                        <option>不合格</option>
+                    </select>
+                </td>
+                <td style="border: 1px solid #ddd; padding: 8px;"><input type="text" placeholder="请输入备注" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;"></td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;"><button type="button" onclick="removeRow(this)" style="border: none; background: none; color: #ff4d4f; cursor: pointer;">删除</button></td>
+            `;
+            tbody.appendChild(tr);
+            updateRowNumbers();
+        }
+        
+        function removeRow(btn) {
+            var tr = btn.parentNode.parentNode;
+            tr.parentNode.removeChild(tr);
+            updateRowNumbers();
+        }
+        
+        function updateRowNumbers() {
+            var tbody = document.getElementById('qualityTableBody');
+            var rows = tbody.getElementsByTagName('tr');
+            for (var i = 0; i < rows.length; i++) {
+                rows[i].getElementsByTagName('td')[0].textContent = i + 1;
+            }
+        }
+    </script>
+</body>
+</html>

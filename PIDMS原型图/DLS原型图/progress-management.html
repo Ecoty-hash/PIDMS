@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>施工管理 - 进度管理</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .breadcrumbs {
+            padding: 10px 20px;
+            font-size: 14px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .breadcrumbs a {
+            color: #666;
+            text-decoration: none;
+        }
+        
+        .breadcrumbs a:hover {
+            color: #1890ff;
+        }
+        
+        .breadcrumbs .separator {
+            color: #ccc;
+        }
+        
+        .search-container {
+            padding: 15px 20px;
+            background-color: #fff;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .search-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+        
+        .search-input-wrapper input {
+            width: 100%;
+            padding: 8px 35px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .search-input-wrapper .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            font-size: 14px;
+        }
+        
+        .search-btn {
+            padding: 8px 20px;
+            background-color: #1890ff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .search-btn:hover {
+            background-color: #096dd9;
+        }
+        
+        .advanced-search-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .advanced-search-btn:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .tree-container {
+            padding: 20px;
+            background-color: #f5f5f5;
+            min-height: calc(100vh - 200px);
+        }
+        
+        .project-card {
+            background-color: #fff;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        
+        .project-header {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .project-header:hover {
+            background-color: #fafafa;
+        }
+        
+        .project-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .expand-icon {
+            font-size: 14px;
+            color: #1890ff;
+            transition: transform 0.2s;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .expand-icon.collapsed {
+            transform: rotate(-90deg);
+        }
+        
+        .project-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: #1890ff;
+            margin: 0;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        
+        .project-name:hover {
+            color: #096dd9;
+        }
+        
+        .project-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            background-color: #e6f7ff;
+            color: #1890ff;
+            font-size: 12px;
+            border-radius: 4px;
+            margin-left: 8px;
+        }
+        
+        .project-header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .header-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        
+        .header-label {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .header-value {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .header-value.duration {
+            color: #1890ff;
+        }
+        
+        .header-value.percent {
+            color: #52c41a;
+        }
+        
+        .project-body {
+            border-top: 1px solid #f0f0f0;
+            display: none;
+        }
+        
+        .project-body.expanded {
+            display: block;
+        }
+        
+        .node-list {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        
+        .node-item {
+            padding: 12px 20px 12px 52px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #f5f5f5;
+            transition: background-color 0.2s;
+        }
+        
+        .node-item:hover {
+            background-color: #fafafa;
+        }
+        
+        .node-item:last-child {
+            border-bottom: none;
+        }
+        
+        .node-item.disabled {
+            opacity: 0.6;
+        }
+        
+        .node-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .node-expand-icon {
+            font-size: 12px;
+            color: #999;
+            cursor: pointer;
+        }
+        
+        .node-name {
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .node-right {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+        
+        .node-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        
+        .node-label {
+            font-size: 11px;
+            color: #999;
+        }
+        
+        .node-value {
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .node-value.date {
+            color: #333;
+        }
+        
+        .node-value.duration {
+            color: #1890ff;
+        }
+        
+        .node-value.percent {
+            color: #52c41a;
+        }
+        
+        .sub-node-list {
+            background-color: #fafafa;
+            border-left: 2px solid #e8e8e8;
+        }
+        
+        .sub-node-item {
+            padding: 10px 20px 10px 72px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .sub-node-item:last-child {
+            border-bottom: none;
+        }
+        
+        .sub-node-name {
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .sub-node-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .sub-node-value {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .sub-node-value.percent {
+            color: #52c41a;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>企业管理系统</h1>
+            </div>
+                                                                                                <nav class="menu">
+                <div class="menu-item">
+                    <span class="menu-title">项目管理</span>
+                    <ul class="submenu">
+                        <li><a href="project.html">项目</a></li>
+                        <li><a href="seal-application.html">用印申请</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item active">
+                    <span class="menu-title">施工管理</span>
+                    <ul class="submenu">
+                        <li><a href="progress-management.html" class="active">进度管理</a></li>
+                        <li><a href="quality-inspection.html">质量检查</a></li>
+                        <li><a href="quality-rectification.html">质量整改单</a></li>
+                        <li><a href="safety-inspection.html">安全检查</a></li>
+                        <li><a href="safety-rectification.html">安全整改单</a></li>
+                        <li><a href="construction-log.html">施工日志</a></li>
+                        <li><a href="visualization.html">可视化管理</a></li>
+                        <li><a href="warning-rule.html">预警规则</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">基础管理</span>
+                    <ul class="submenu">
+                        <li><a href="basic-info.html">基础资料</a></li>
+                        <li><a href="customer.html">客户</a></li>
+                        <li><a href="supplier.html">供应商</a></li>
+                        <li><a href="internal-unit.html">内部单位</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">系统管理</span>
+                    <ul class="submenu">
+                        <li><a href="personnel.html">人员管理</a></li>
+                        <li><a href="organization.html">机构管理</a></li>
+                        <li><a href="role-management.html">角色管理</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+        
+        <main class="main-content">
+            <div class="breadcrumbs">
+                <a href="index.html">工作台</a>
+                <span class="separator">/</span>
+                <span>进度管理</span>
+            </div>
+            
+            <div class="search-container">
+                <div class="search-input-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="请输入关键字搜索">
+                </div>
+                <button class="search-btn">搜索</button>
+                <button class="advanced-search-btn">高级搜索</button>
+                <button class="advanced-search-btn">使用教程</button>
+            </div>
+            
+            <div class="tree-container">
+                <div class="project-card">
+                    <div class="project-header" onclick="toggleProject('project1')">
+                        <div class="project-header-left">
+                            <span class="expand-icon" id="expand1">▶</span>
+                            <span class="project-name" onclick="event.stopPropagation(); window.location.href='progress-detail.html'">墨西哥蒙特雷地铁6号线延长线项目</span>
+                            <span class="project-tag">在建</span>
+                        </div>
+                        <div class="project-header-right">
+                            <div class="header-item">
+                                <span class="header-label">计划开工</span>
+                                <span class="header-value date">2025-07-19</span>
+                            </div>
+                            <div class="header-item">
+                                <span class="header-label">计划完工</span>
+                                <span class="header-value date">--</span>
+                            </div>
+                            <div class="header-item">
+                                <span class="header-label">计划工期</span>
+                                <span class="header-value duration">--天</span>
+                            </div>
+                            <div class="header-item">
+                                <span class="header-label">进度</span>
+                                <span class="header-value percent">57.42%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="project-body" id="project1">
+                        <ul class="node-list">
+                            <li class="node-item">
+                                <div class="node-left">
+                                    <span class="node-expand-icon" onclick="toggleSubNode('node1-1', event)">▶</span>
+                                    <span class="node-name">可行性研究阶段</span>
+                                </div>
+                                <div class="node-right">
+                                    <div class="node-info">
+                                        <span class="node-label">计划开工</span>
+                                        <span class="node-value date">2025-07-19</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">计划完工</span>
+                                        <span class="node-value date">2025-09-30</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">计划工期</span>
+                                        <span class="node-value duration">73天</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">进度</span>
+                                        <span class="node-value percent">35%</span>
+                                    </div>
+                                </div>
+                            </li>
+                            <ul class="sub-node-list" id="node1-1" style="display: none;">
+                                <li class="sub-node-item">
+                                    <span class="sub-node-name">地质勘察</span>
+                                    <div class="sub-node-info">
+                                        <span class="sub-node-value">2025-07-19</span>
+                                        <span class="sub-node-value">2025-08-15</span>
+                                        <span class="sub-node-value percent">80%</span>
+                                    </div>
+                                </li>
+                                <li class="sub-node-item">
+                                    <span class="sub-node-name">环境评估</span>
+                                    <div class="sub-node-info">
+                                        <span class="sub-node-value">2025-08-01</span>
+                                        <span class="sub-node-value">2025-09-30</span>
+                                        <span class="sub-node-value percent">25%</span>
+                                    </div>
+                                </li>
+                            </ul>
+                            <li class="node-item">
+                                <div class="node-left">
+                                    <span class="node-expand-icon" onclick="toggleSubNode('node1-2', event)">▶</span>
+                                    <span class="node-name">初步设计阶段</span>
+                                </div>
+                                <div class="node-right">
+                                    <div class="node-info">
+                                        <span class="node-label">计划开工</span>
+                                        <span class="node-value date">2025-10-01</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">计划完工</span>
+                                        <span class="node-value date">2026-01-31</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">计划工期</span>
+                                        <span class="node-value duration">123天</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">进度</span>
+                                        <span class="node-value percent">0%</span>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="project-card">
+                    <div class="project-header" onclick="toggleProject('project2')">
+                        <div class="project-header-left">
+                            <span class="expand-icon" id="expand2">▶</span>
+                            <span class="project-name" onclick="event.stopPropagation(); window.location.href='progress-detail.html'">墨西哥蒙特雷地铁4、6号线项目</span>
+                            <span class="project-tag">在建</span>
+                        </div>
+                        <div class="project-header-right">
+                            <div class="header-item">
+                                <span class="header-label">计划开工</span>
+                                <span class="header-value date">2022-09-30</span>
+                            </div>
+                            <div class="header-item">
+                                <span class="header-label">计划完工</span>
+                                <span class="header-value date">--</span>
+                            </div>
+                            <div class="header-item">
+                                <span class="header-label">计划工期</span>
+                                <span class="header-value duration">--天</span>
+                            </div>
+                            <div class="header-item">
+                                <span class="header-label">进度</span>
+                                <span class="header-value percent">50%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="project-body" id="project2">
+                        <ul class="node-list">
+                            <li class="node-item">
+                                <div class="node-left">
+                                    <span class="node-expand-icon" onclick="toggleSubNode('node2-1', event)">▶</span>
+                                    <span class="node-name">地下管网基础施工</span>
+                                </div>
+                                <div class="node-right">
+                                    <div class="node-info">
+                                        <span class="node-label">计划开工</span>
+                                        <span class="node-value date">2025-02-01</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">计划完工</span>
+                                        <span class="node-value date">2025-04-30</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">计划工期</span>
+                                        <span class="node-value duration">90天</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">进度</span>
+                                        <span class="node-value percent">75%</span>
+                                    </div>
+                                </div>
+                            </li>
+                            <ul class="sub-node-list" id="node2-1" style="display: none;">
+                                <li class="sub-node-item">
+                                    <span class="sub-node-name">管线探测</span>
+                                    <div class="sub-node-info">
+                                        <span class="sub-node-value">2025-02-01</span>
+                                        <span class="sub-node-value">2025-02-28</span>
+                                        <span class="sub-node-value percent">100%</span>
+                                    </div>
+                                </li>
+                                <li class="sub-node-item">
+                                    <span class="sub-node-name">沟槽开挖</span>
+                                    <div class="sub-node-info">
+                                        <span class="sub-node-value">2025-03-01</span>
+                                        <span class="sub-node-value">2025-04-15</span>
+                                        <span class="sub-node-value percent">85%</span>
+                                    </div>
+                                </li>
+                                <li class="sub-node-item">
+                                    <span class="sub-node-name">管道铺设</span>
+                                    <div class="sub-node-info">
+                                        <span class="sub-node-value">2025-03-15</span>
+                                        <span class="sub-node-value">2025-04-30</span>
+                                        <span class="sub-node-value percent">60%</span>
+                                    </div>
+                                </li>
+                            </ul>
+                            <li class="node-item">
+                                <div class="node-left">
+                                    <span class="node-expand-icon" onclick="toggleSubNode('node2-2', event)">▶</span>
+                                    <span class="node-name">隧道盾构施工</span>
+                                </div>
+                                <div class="node-right">
+                                    <div class="node-info">
+                                        <span class="node-label">计划开工</span>
+                                        <span class="node-value date">2025-05-01</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">计划完工</span>
+                                        <span class="node-value date">2025-11-30</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">计划工期</span>
+                                        <span class="node-value duration">214天</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">进度</span>
+                                        <span class="node-value percent">25%</span>
+                                    </div>
+                                </div>
+                            </li>
+                            <ul class="sub-node-list" id="node2-2" style="display: none;">
+                                <li class="sub-node-item">
+                                    <span class="sub-node-name">盾构机进场</span>
+                                    <div class="sub-node-info">
+                                        <span class="sub-node-value">2025-05-01</span>
+                                        <span class="sub-node-value">2025-05-15</span>
+                                        <span class="sub-node-value percent">100%</span>
+                                    </div>
+                                </li>
+                                <li class="sub-node-item">
+                                    <span class="sub-node-name">盾构掘进</span>
+                                    <div class="sub-node-info">
+                                        <span class="sub-node-value">2025-05-16</span>
+                                        <span class="sub-node-value">2025-11-30</span>
+                                        <span class="sub-node-value percent">20%</span>
+                                    </div>
+                                </li>
+                            </ul>
+                            <li class="node-item">
+                                <div class="node-left">
+                                    <span class="node-expand-icon" onclick="toggleSubNode('node2-3', event)">▶</span>
+                                    <span class="node-name">车站主体结构</span>
+                                </div>
+                                <div class="node-right">
+                                    <div class="node-info">
+                                        <span class="node-label">计划开工</span>
+                                        <span class="node-value date">2025-06-01</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">计划完工</span>
+                                        <span class="node-value date">2025-12-31</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">计划工期</span>
+                                        <span class="node-value duration">214天</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">进度</span>
+                                        <span class="node-value percent">10%</span>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        function toggleProject(projectId) {
+            var allBodies = document.querySelectorAll('.project-body');
+            var allIcons = document.querySelectorAll('.expand-icon');
+            var body = document.getElementById(projectId);
+            var icon = document.getElementById('expand' + projectId.replace('project', ''));
+            var wasExpanded = body.classList.contains('expanded');
+            
+            allBodies.forEach(function(b) {
+                b.classList.remove('expanded');
+            });
+            allIcons.forEach(function(i) {
+                i.textContent = '▶';
+            });
+            
+            if (!wasExpanded) {
+                body.classList.add('expanded');
+                icon.textContent = '▼';
+            }
+        }
+        
+        function toggleSubNode(nodeId, event) {
+            event.stopPropagation();
+            var list = document.getElementById(nodeId);
+            var icon = event.target;
+            
+            if (list.style.display === 'none') {
+                list.style.display = 'block';
+                icon.textContent = '▼';
+            } else {
+                list.style.display = 'none';
+                icon.textContent = '▶';
+            }
+        }
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>

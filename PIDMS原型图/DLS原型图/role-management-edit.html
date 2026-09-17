@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统管理 - 编辑角色</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>企业管理系统</h1>
+            </div>
+                                                                                                                                                <nav class="menu">
+                <div class="menu-item">
+                    <span class="menu-title">项目管理</span>
+                    <ul class="submenu">
+                        <li><a href="project.html">项目</a></li>
+                        <li><a href="seal-application.html">用印申请</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">施工管理</span>
+                    <ul class="submenu">
+                        <li><a href="progress-management.html">进度管理</a></li>
+                        <li><a href="quality-inspection.html">质量检查</a></li>
+                        <li><a href="quality-rectification.html">质量整改单</a></li>
+                        <li><a href="safety-inspection.html">安全检查</a></li>
+                        <li><a href="safety-rectification.html">安全整改单</a></li>
+                        <li><a href="construction-log.html">施工日志</a></li>
+                        <li><a href="visualization.html">可视化管理</a></li>
+                        <li><a href="warning-rule.html">预警规则</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">基础管理</span>
+                    <ul class="submenu">
+                        <li><a href="basic-info.html">基础资料</a></li>
+                        <li><a href="customer.html">客户</a></li>
+                        <li><a href="supplier.html">供应商</a></li>
+                        <li><a href="internal-unit.html">内部单位</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item active">
+                    <span class="menu-title">系统管理</span>
+                    <ul class="submenu">
+                        <li><a href="personnel.html">人员管理</a></li>
+                        <li><a href="organization.html">机构管理</a></li>
+                        <li><a href="role-management.html" class="active">角色管理</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+        
+        <main class="main-content">
+            <header class="header">
+                <div class="header-left">
+                    <h2>系统管理 / 角色管理 / 编辑</h2>
+                </div>
+                <div class="header-right">
+                    <div class="header-buttons">
+                        <button class="btn" onclick="window.location.href='role-management.html'">返回</button>
+                    </div>
+                </div>
+            </header>
+            
+            <div class="content-wrapper">
+                <div class="form-card">
+                    <form>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>角色名称 <span class="required">*</span></label>
+                                <input type="text" value="项目经理" required>
+                            </div>
+                            <div class="form-group">
+                                <label>角色编码 <span class="required">*</span></label>
+                                <input type="text" value="PM" required>
+                            </div>
+                            <div class="form-group">
+                                <label>状态</label>
+                                <select>
+                                    <option value="enabled" selected>启用</option>
+                                    <option value="disabled">禁用</option>
+                                </select>
+                            </div>
+                            <div class="form-group full-width">
+                                <label>角色描述</label>
+                                <textarea>负责项目整体管理</textarea>
+                            </div>
+                            <div class="form-group full-width">
+                                <label>权限设置</label>
+                                <div class="permission-tree">
+                                    <div class="permission-group">
+                                        <div class="permission-header">
+                                            <label><input type="checkbox" checked> 项目管理</label>
+                                        </div>
+                                        <div class="permission-items">
+                                            <label><input type="checkbox" checked> 项目</label>
+                                            <label><input type="checkbox" checked> 用印申请</label>
+                                        </div>
+                                    </div>
+                                    <div class="permission-group">
+                                        <div class="permission-header">
+                                            <label><input type="checkbox" checked> 施工管理</label>
+                                        </div>
+                                        <div class="permission-items">
+                                            <label><input type="checkbox" checked> 进度管理</label>
+                                            <label><input type="checkbox" checked> 质量检查</label>
+                                            <label><input type="checkbox" checked> 质量整改单</label>
+                                            <label><input type="checkbox" checked> 安全检查</label>
+                                            <label><input type="checkbox" checked> 安全整改单</label>
+                                            <label><input type="checkbox" checked> 施工日志</label>
+                                            <label><input type="checkbox"> 可视化管理</label>
+                                            <label><input type="checkbox"> 预警规则</label>
+                                        </div>
+                                    </div>
+                                    <div class="permission-group">
+                                        <div class="permission-header">
+                                            <label><input type="checkbox" checked> 基础管理</label>
+                                        </div>
+                                        <div class="permission-items">
+                                            <label><input type="checkbox" checked> 基础资料</label>
+                                            <label><input type="checkbox" checked> 客户</label>
+                                            <label><input type="checkbox" checked> 供应商</label>
+                                            <label><input type="checkbox" checked> 内部单位</label>
+                                        </div>
+                                    </div>
+                                    <div class="permission-group">
+                                        <div class="permission-header">
+                                            <label><input type="checkbox"> 系统管理</label>
+                                        </div>
+                                        <div class="permission-items">
+                                            <label><input type="checkbox"> 人员管理</label>
+                                            <label><input type="checkbox"> 机构管理</label>
+                                            <label><input type="checkbox"> 角色管理</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group full-width">
+                                <label>用户分配</label>
+                                <div class="user-assignment-tree">
+                                    <div class="search-box small">
+                                        <input type="text" placeholder="搜索用户">
+                                        <button>搜索</button>
+                                    </div>
+                                    <div class="user-tree-list">
+                                        <div class="user-tree-item">
+                                            <label><input type="checkbox" checked> 张文琦 (GM2025001) - 项目三部</label>
+                                        </div>
+                                        <div class="user-tree-item">
+                                            <label><input type="checkbox" checked> 赵六 (GM2025002) - 技术部</label>
+                                        </div>
+                                        <div class="user-tree-item">
+                                            <label><input type="checkbox"> 王五 (GM2025003) - 综合管理部</label>
+                                        </div>
+                                        <div class="user-tree-item">
+                                            <label><input type="checkbox"> 李七 (GM2025004) - 项目三部</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn primary">保存</button>
+                            <button type="button" class="btn" onclick="window.location.href='role-management.html'">取消</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+    <script>
+        document.querySelectorAll('.permission-header input').forEach(function(parentCheckbox) {
+            parentCheckbox.addEventListener('change', function() {
+                var group = this.closest('.permission-group');
+                var childCheckboxes = group.querySelectorAll('.permission-items input');
+                childCheckboxes.forEach(function(child) {
+                    child.checked = parentCheckbox.checked;
+                });
+            });
+        });
+
+        document.querySelectorAll('.permission-items input').forEach(function(childCheckbox) {
+            childCheckbox.addEventListener('change', function() {
+                var group = this.closest('.permission-group');
+                var parentCheckbox = group.querySelector('.permission-header input');
+                var childCheckboxes = group.querySelectorAll('.permission-items input');
+                var allChecked = Array.from(childCheckboxes).every(function(cb) { return cb.checked; });
+                parentCheckbox.checked = allChecked;
+            });
+        });
+    </script>
+</body>
+</html>

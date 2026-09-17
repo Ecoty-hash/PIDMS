@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目管理 - 项目预算</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>企业管理系统</h1>
+            </div>
+                                                                        <nav class="menu">
+                <div class="menu-item active">
+                    <span class="menu-title">项目管理</span>
+                    <ul class="submenu">
+                        <li><a href="project.html" class="active">项目</a></li>
+                        <li><a href="seal-application.html">用印申请</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">施工管理</span>
+                    <ul class="submenu">
+                        <li><a href="progress-management.html">进度管理</a></li>
+                        <li><a href="quality-inspection.html">质量检查</a></li>
+                        <li><a href="quality-rectification.html">质量整改单</a></li>
+                        <li><a href="safety-inspection.html">安全检查</a></li>
+                        <li><a href="safety-rectification.html">安全整改单</a></li>
+                        <li><a href="construction-log.html">施工日志</a></li>
+                        <li><a href="visualization.html">可视化管理</a></li>
+                        <li><a href="warning-rule.html">预警规则</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">基础管理</span>
+                    <ul class="submenu">
+                        <li><a href="basic-info.html">基础资料</a></li>
+                        <li><a href="customer.html">客户</a></li>
+                        <li><a href="supplier.html">供应商</a></li>
+                        <li><a href="internal-unit.html">内部单位</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">系统管理</span>
+                    <ul class="submenu">
+                        <li><a href="personnel.html">人员管理</a></li>
+                        <li><a href="organization.html">机构管理</a></li>
+                        <li><a href="role-management.html">角色管理</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <div class="header-left">
+                    <h2>项目 / 项目预算</h2>
+                </div>
+                <div class="header-right">
+                    <div class="search-box">
+                        <input type="text" placeholder="输入关键字进行搜索">
+                        <button>搜索</button>
+                    </div>
+                    <div class="header-buttons">
+                        <button class="btn" onclick="toggleAdvancedSearch()">高级搜索</button>
+                        <button class="btn">导出</button>
+                        <button class="btn">导入</button>
+                        <button class="btn primary" onclick="window.location.href='project-budget-add.html'">+ 新增</button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="advanced-search" id="advancedSearch" style="display: none;">
+                <div class="search-fields">
+                    <div class="search-field">
+                        <label>项目名称</label>
+                        <input type="text" placeholder="请输入项目名称">
+                    </div>
+                    <div class="search-field">
+                        <label>审批状态</label>
+                        <select>
+                            <option value="">请选择</option>
+                            <option value="已审批">已审批</option>
+                            <option value="审批中">审批中</option>
+                            <option value="已拒绝">已拒绝</option>
+                        </select>
+                    </div>
+                    <div class="search-field">
+                        <label>修订状态</label>
+                        <select>
+                            <option value="">请选择</option>
+                            <option value="已修订">已修订</option>
+                            <option value="未修订">未修订</option>
+                            <option value="修订中">修订中</option>
+                        </select>
+                    </div>
+                    <div class="search-field">
+                        <label>预算版本</label>
+                        <input type="text" placeholder="请输入预算版本号">
+                    </div>
+                    <div class="search-field">
+                        <label>创建人</label>
+                        <input type="text" placeholder="请输入创建人">
+                    </div>
+                    <div class="search-field">
+                        <label>创建时间</label>
+                        <input type="date">
+                    </div>
+                </div>
+                <div class="search-actions">
+                    <button class="btn primary">搜索</button>
+                    <button class="btn" onclick="resetAdvancedSearch()">重置</button>
+                </div>
+            </div>
+
+            <div class="content-wrapper">
+                <div class="project-list">
+                    <table class="project-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox"></th><th>审批状态</th><th>项目名称</th><th>预算总额</th><th>人工预算</th><th>材料预算</th><th>设备预算</th><th>费用预算</th><th>分包预算</th><th>其他预算</th><th>修订状态</th><th>预算版本</th><th>创建人</th><th>创建时间</th><th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+<tr>
+                                <td><input type="checkbox"></td>
+                                <td>已审批</td>
+                                <td><a href="project-budget-detail.html" class="project-name">墨西哥蒙特雷地铁 6 号线</a></td>
+                                <td>¥10,000,000.00</td>
+                                <td>¥2,000,000.00</td>
+                                <td>¥3,000,000.00</td>
+                                <td>¥1,000,000.00</td>
+                                <td>¥500,000.00</td>
+                                <td>¥3,000,000.00</td>
+                                <td>¥500,000.00</td>
+                                <td>已修订</td>
+                                <td>V2.0</td>
+                                <td>周九</td>
+                                <td>2025-01-01</td>
+                                <td>
+                                    <a href="project-budget-edit.html" class="action-btn">编辑</a>
+                                    <a href="project-budget-detail.html" class="action-btn">查看</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination">
+                    <div class="page-info">
+                        <span>已选择 0 条</span>
+                        <span>共 1 条</span>
+                    </div>
+                    <div class="page-controls">
+                        <select class="page-size-select">
+                            <option>20条/页</option>
+                            <option>50条/页</option>
+                            <option>100条/页</option>
+                        </select>
+                        <button class="page-btn">‹</button>
+                        <button class="page-btn active">1</button>
+                        <button class="page-btn">›</button>
+                        <span>前往</span>
+                        <input type="text" class="page-input" value="1">
+                        <span>页</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+    <script>
+        function toggleAdvancedSearch() {
+            var panel = document.getElementById('advancedSearch');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+        function resetAdvancedSearch() {
+            var panel = document.getElementById('advancedSearch');
+            panel.querySelectorAll('input').forEach(function(input) { input.value = ''; });
+            panel.querySelectorAll('select').forEach(function(select) { select.selectedIndex = 0; });
+        }
+    </script>
+</body>
+</html>

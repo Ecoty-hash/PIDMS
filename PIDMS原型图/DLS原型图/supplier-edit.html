@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑供应商 - 施工管理系统</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>企业管理系统</h1>
+            </div>
+                                                                                                                                                                        <nav class="menu">
+                <div class="menu-item">
+                    <span class="menu-title">项目管理</span>
+                    <ul class="submenu">
+                        <li><a href="project.html">项目</a></li>
+                        <li><a href="seal-application.html">用印申请</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">施工管理</span>
+                    <ul class="submenu">
+                        <li><a href="progress-management.html">进度管理</a></li>
+                        <li><a href="quality-inspection.html">质量检查</a></li>
+                        <li><a href="quality-rectification.html">质量整改单</a></li>
+                        <li><a href="safety-inspection.html">安全检查</a></li>
+                        <li><a href="safety-rectification.html">安全整改单</a></li>
+                        <li><a href="construction-log.html">施工日志</a></li>
+                        <li><a href="visualization.html">可视化管理</a></li>
+                        <li><a href="warning-rule.html">预警规则</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item active">
+                    <span class="menu-title">基础管理</span>
+                    <ul class="submenu">
+                        <li><a href="basic-info.html">基础资料</a></li>
+                        <li><a href="customer.html">客户</a></li>
+                        <li><a href="supplier.html" class="active">供应商</a></li>
+                        <li><a href="internal-unit.html">内部单位</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">系统管理</span>
+                    <ul class="submenu">
+                        <li><a href="personnel.html">人员管理</a></li>
+                        <li><a href="organization.html">机构管理</a></li>
+                        <li><a href="role-management.html">角色管理</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+        
+        <main class="main-content">
+            <header class="header">
+                <div class="header-left">
+                    <h2>基础管理 / 编辑供应商</h2>
+                </div>
+                <div class="header-right">
+                    <div class="header-buttons">
+                        <button class="btn" onclick="window.location.href='supplier.html'">返回</button>
+                    </div>
+                </div>
+            </header>
+            
+            <div class="content-wrapper"><div class="form-card">
+                <form>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>供应商编号</label>
+                            <input type="text" placeholder="请输入供应商编号" value="GY-001">
+                        </div>
+                        <div class="form-group">
+                            <label>供应商名称 <span class="required">*</span></label>
+                            <input type="text" placeholder="请输入供应商名称" value="蒙特雷建材供应商" required>
+                        </div>
+                        <div class="form-group">
+                            <label>供应商类型</label>
+                            <select>
+                                <option value="">请选择</option>
+                                <option value="material" selected>材料供应商</option>
+                                <option value="equipment">设备供应商</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>联系人</label>
+                            <input type="text" placeholder="请输入联系人" value="Carlos">
+                        </div>
+                        <div class="form-group">
+                            <label>联系电话</label>
+                            <input type="text" placeholder="请输入联系电话" value="+52-81-1234-5678">
+                        </div>
+                        <div class="form-group">
+                            <label>地址</label>
+                            <input type="text" placeholder="请输入地址" value="墨西哥蒙特雷市工业区">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn primary">保存</button>
+                        <button type="button" class="btn" onclick="window.location.href='supplier.html'">取消</button>
+                    </div>
+                </form></div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

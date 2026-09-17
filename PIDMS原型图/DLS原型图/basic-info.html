@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基础管理 - 基础资料</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .basic-info-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .basic-info-item {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #e8e8e8;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .basic-info-item:hover {
+            border-color: #1890ff;
+            box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
+        }
+        .info-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-right: 16px;
+        }
+        .icon-red { background: #fff1f0; color: #ff4d4f; }
+        .icon-green { background: #f6ffed; color: #52c41a; }
+        .icon-orange { background: #fffbe6; color: #faad14; }
+        .icon-blue { background: #e6f7ff; color: #1890ff; }
+        .info-name {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+        .info-arrow {
+            color: #999;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>企业管理系统</h1>
+            </div>
+                                                                                                            <nav class="menu">
+                <div class="menu-item">
+                    <span class="menu-title">项目管理</span>
+                    <ul class="submenu">
+                        <li><a href="project.html">项目</a></li>
+                        <li><a href="seal-application.html">用印申请</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">施工管理</span>
+                    <ul class="submenu">
+                        <li><a href="progress-management.html">进度管理</a></li>
+                        <li><a href="quality-inspection.html">质量检查</a></li>
+                        <li><a href="quality-rectification.html">质量整改单</a></li>
+                        <li><a href="safety-inspection.html">安全检查</a></li>
+                        <li><a href="safety-rectification.html">安全整改单</a></li>
+                        <li><a href="construction-log.html">施工日志</a></li>
+                        <li><a href="visualization.html">可视化管理</a></li>
+                        <li><a href="warning-rule.html">预警规则</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item active">
+                    <span class="menu-title">基础管理</span>
+                    <ul class="submenu">
+                        <li><a href="basic-info.html" class="active">基础资料</a></li>
+                        <li><a href="customer.html">客户</a></li>
+                        <li><a href="supplier.html">供应商</a></li>
+                        <li><a href="internal-unit.html">内部单位</a></li>
+                    </ul>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-title">系统管理</span>
+                    <ul class="submenu">
+                        <li><a href="personnel.html">人员管理</a></li>
+                        <li><a href="organization.html">机构管理</a></li>
+                        <li><a href="role-management.html">角色管理</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <div class="header-left">
+                    <h2>基础资料</h2>
+                </div>
+                <div class="header-right">
+                    <div class="search-box">
+                        <input type="text" placeholder="输入关键字进行搜索">
+                        <button>搜索</button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-wrapper" style="padding: 20px;">
+                <div class="basic-info-list">
+                    <div class="basic-info-item">
+                        <div class="info-icon icon-red">👤</div>
+                        <div class="info-name">工种类型</div>
+                        <span class="info-arrow">›</span>
+                    </div>
+                    <div class="basic-info-item">
+                        <div class="info-icon icon-green">🏷️</div>
+                        <div class="info-name">动态标签</div>
+                        <span class="info-arrow">›</span>
+                    </div>
+                    <div class="basic-info-item">
+                        <div class="info-icon icon-blue">📊</div>
+                        <div class="info-name">项目状态</div>
+                        <span class="info-arrow">›</span>
+                    </div>
+                    <div class="basic-info-item">
+                        <div class="info-icon icon-green">🖋️</div>
+                        <div class="info-name">印章类型</div>
+                        <span class="info-arrow">›</span>
+                    </div>
+                    <div class="basic-info-item">
+                        <div class="info-icon icon-blue">📋</div>
+                        <div class="info-name">任务标签</div>
+                        <span class="info-arrow">›</span>
+                    </div>
+                    <div class="basic-info-item">
+                        <div class="info-icon icon-green">🛡️</div>
+                        <div class="info-name">安全检查项</div>
+                        <span class="info-arrow">›</span>
+                    </div>
+                    <div class="basic-info-item">
+                        <div class="info-icon icon-orange">✅</div>
+                        <div class="info-name">质量检查项</div>
+                        <span class="info-arrow">›</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

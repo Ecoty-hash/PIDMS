@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企业管理系统 · 工作台</title>
+<!--
+  企业管理系统 (PIDMS) · 工作台主页面
+  ─────────────────────────────────────────────
+  说明：
+  · 页面结构与功能需求以「DLS原型图」为准
+  · 数据层 (Api) 与「PIDMS接口文档」一致，mock 响应结构与真实接口完全同构
+  · 接入真实后端时：将 CONFIG.useMock 置为 false 即可切换到真实 fetch
+  · 侧边栏菜单为数据驱动 (MENU 数组)，后续接入路由只需替换 href
+-->
+<style>
+  /* ============ 设计令牌 (Design Tokens) ============ */
+  :root {
+    color-scheme: light;
+    /* 工程勘测面板色板：蓝图墨蓝 + 草图纸冷白 + 安全琥珀 */
+    --ink: #12263a;          /* 结构墨蓝：标题 / 侧边栏 / 结构线 */
+    --ink-2: #1e3a55;        /* 墨蓝次级 */
+    --slate: #52606d;        /* 正文 */
+    --muted: #7b8794;        /* 弱化文字 */
+    --paper: #f3f5f7;        /* 草图纸冷白：页面底色 */
+    --card: #ffffff;         /* 面板 */
+    --line: #d8dee6;         /* 发丝线 */
+    --grid: #e6eaee;         /* 图表网格 */
+    --blue: #1d6fb8;         /* 工程蓝：计划 / 链接 */
+    --green: #1e8a5a;        /* 合格绿：实际 / 通过 */
+    --amber: #d97706;        /* 安全琥珀：在建 / 警告 */
+    --red: #c63d2b;          /* 警报红 */
+    --mono: "Consolas", "Roboto Mono", "SFMono-Regular", monospace;
+    --num: "Bahnschrift", "DIN Alternate", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    --body: "Segoe UI", system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    --shadow: 0 1px 2px rgba(18, 38, 58, .05), 0 1px 3px rgba(18, 38, 58, .04);
+    --sidebar-w: 232px;
+    --radius: 10px;
+  }
+
+  /* ============ 基础 ============ */
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--body);
+    font-size: 14px;
+    color: var(--slate);
+    background: var(--paper);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; }
+  :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 4px; }
+
+  /* ============ 应用骨架 ============ */
+  .app { display: flex; min-height: 100vh; }
+
+  /* ---------- 侧边栏 ---------- */
+  .sidebar {
+    width: var(--sidebar-w);
+    flex-shrink: 0;
+    background: var(--ink);
+    color: #cdd8e4;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 18px 18px 16px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  .brand__mark {
+    width: 30px; height: 30px; flex-shrink: 0;
+  }
+  .brand__name { color: #fff; font-weight: 600; font-size: 15px; letter-spacing: .5px; }
+  .brand__sub { font-size: 10px; color: #7f93a8; font-family: var(--mono); letter-spacing: 1px; margin-top: 2px; }
+
+  .nav { flex: 1; padding: 12px 10px 20px; }
+  .nav-group { margin-bottom: 18px; }
+  .nav-group__title {
+    font-size: 11px; color: #6b7f94; letter-spacing: 2px;
+    padding: 0 10px; margin-bottom: 6px; text-transform: uppercase;
+  }
+  .nav-group__list { list-style: none; margin: 0; padding: 0; }
+  .nav-item a {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 6px;
+    color: #b9c6d4; font-size: 13.5px;
+    transition: background .15s, color .15s;
+    cursor: pointer;
+  }
+  .nav-item a:hover { background: rgba(255,255,255,.06); color: #fff; }
+  .nav-item.is-active a { background: rgba(255,255,255,.12); color: #fff; font-weight: 500; }
+  .nav-item__dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: currentColor; opacity: .45; flex-shrink: 0;
+  }
+  .nav-item.is-active .nav-item__dot { opacity: 1; background: var(--amber); }
+
+  .sidebar__foot {
+    padding: 14px 18px; border-top: 1px solid rgba(255,255,255,.08);
+    font-size: 11px; color: #6b7f94; font-family: var(--mono); letter-spacing: .5px;
+  }
+
+  /* ---------- 主区 ---------- */
+  .shell { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 14px 28px;
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 20;
+  }
+  .topbar__crumb { font-size: 13px; color: var(--muted); }
+  .topbar__crumb b { color: var(--ink); font-weight: 600; }
+  .topbar__right { display: flex; align-items: center; gap: 14px; }
+
+  .search {
+    position: relative; display: flex; align-items: center;
+  }
+  .search input {
+    width: 240px; padding: 7px 12px 7px 34px;
+    border: 1px solid var(--line); border-radius: 7px;
+    background: var(--paper); font-size: 13px; color: var(--ink);
+    transition: border-color .15s, background .15s;
+  }
+  .search input:focus { outline: none; border-color: var(--blue); background: #fff; }
+  .search__icon {
+    position: absolute; left: 11px; color: var(--muted);
+    font-size: 13px; pointer-events: none;
+  }
+  .user {
+    display: flex; align-items: center; gap: 9px;
+    padding: 5px 8px 5px 5px; border-radius: 8px;
+  }
+  .user__avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--ink); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600;
+  }
+  .user__meta { line-height: 1.15; }
+  .user__name { font-size: 13px; color: var(--ink); font-weight: 500; }
+  .user__role { font-size: 11px; color: var(--muted); }
+
+  /* ---------- 内容区 ---------- */
+  .content {
+    padding: 24px 28px 40px;
+    max-width: 1280px; width: 100%; margin: 0 auto;
+  }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+  }
+  .panel__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  .panel__eyebrow {
+    font-size: 10.5px; letter-spacing: 2px; color: var(--muted);
+    font-family: var(--mono); text-transform: uppercase; margin-bottom: 4px;
+  }
+  .panel__title { font-size: 15px; font-weight: 600; color: var(--ink); margin: 0; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
+  .grid-3 { display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 18px; margin-top: 18px; }
+
+  /* ---------- 英雄区：结构柱进度仪 ---------- */
+  .hero {
+    display: grid; grid-template-columns: 1.05fr 1fr; gap: 26px;
+    background:
+      linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px),
+      var(--ink);
+    background-size: 22px 22px;
+    background-position: -1px -1px;
+    color: #eef3f8;
+    border: none; border-radius: var(--radius);
+    overflow: hidden;
+    position: relative;
+  }
+  .hero::after {  /* 右上角蓝图十字准星 */
+    content: "";
+    position: absolute; top: 14px; right: 14px; width: 22px; height: 22px;
+    background:
+      linear-gradient(#eef3f8, #eef3f8) center/1px 100% no-repeat,
+      linear-gradient(#eef3f8, #eef3f8) center/100% 1px no-repeat,
+      radial-gradient(circle at center, transparent 3.5px, #eef3f8 3.5px 4.5px, transparent 4.5px);
+    opacity: .35; pointer-events: none;
+  }
+  .hero__main { padding: 28px 30px 30px; display: flex; flex-direction: column; justify-content: center; }
+  .hero__eyebrow {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 3px;
+    color: #8fa6bd; text-transform: uppercase; margin-bottom: 10px;
+  }
+  .hero__label { font-size: 14px; color: #b9c6d4; margin-bottom: 6px; }
+  .hero__value {
+    font-family: var(--num); font-weight: 600; font-size: 64px; line-height: 1;
+    color: #fff; letter-spacing: -.5px;
+  }
+  .hero__value small { font-size: 26px; color: #8fa6bd; font-weight: 500; }
+  .hero__delta { margin-top: 12px; font-size: 13px; color: #8fa6bd; }
+  .hero__delta .up { color: #5ecb8d; font-weight: 600; }
+  .hero__meta {
+    display: flex; gap: 28px; margin-top: 22px;
+    padding-top: 18px; border-top: 1px solid rgba(255,255,255,.12);
+  }
+  .hero__meta-item .v { font-family: var(--num); font-size: 22px; font-weight: 600; color: #fff; }
+  .hero__meta-item .k { font-size: 11.5px; color: #8fa6bd; margin-top: 3px; }
+  .hero__gauge {
+    padding: 20px 24px 22px; display: flex; align-items: center; justify-content: center;
+    border-left: 1px solid rgba(255,255,255,.1);
+  }
+
+  /* ---------- 状态分布 / 合格率 ---------- */
+  .donut-wrap { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+  .donut { position: relative; width: 168px; height: 168px; flex-shrink: 0; }
+  .donut svg { width: 100%; height: 100%; }
+  .donut__center {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; pointer-events: none;
+  }
+  .donut__center .t { font-family: var(--num); font-size: 26px; font-weight: 600; color: var(--ink); }
+  .donut__center .k { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .legend { display: flex; flex-direction: column; gap: 9px; flex: 1; min-width: 150px; }
+  .legend__row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .legend__swatch { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+  .legend__name { color: var(--slate); flex: 1; }
+  .legend__pct { font-family: var(--mono); color: var(--ink); font-weight: 600; }
+
+  .rate-list { display: flex; flex-direction: column; gap: 22px; }
+  .rate-item__head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .rate-item__name { font-size: 13px; color: var(--slate); }
+  .rate-item__val { font-family: var(--num); font-size: 20px; font-weight: 600; color: var(--ink); }
+  .rate-track { position: relative; height: 12px; border-radius: 6px; background: var(--grid); overflow: hidden; }
+  .rate-track__fill { height: 100%; border-radius: 6px; transition: width .6s cubic-bezier(.2,.8,.2,1); }
+  .rate-track__ticks {
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, transparent 0 19%, rgba(255,255,255,.55) 19% 20%);
+    border-radius: 6px;
+  }
+  .rate-item__foot { display: flex; gap: 18px; margin-top: 8px; font-size: 12px; color: var(--muted); }
+  .rate-item__foot b { font-family: var(--num); color: var(--ink); }
+
+  /* ---------- 趋势图 ---------- */
+  .seg { display: inline-flex; background: var(--paper); border: 1px solid var(--line); border-radius: 7px; padding: 2px; }
+  .seg button {
+    border: none; background: transparent; padding: 4px 12px; border-radius: 5px;
+    font-size: 12.5px; color: var(--muted); cursor: pointer; transition: all .15s;
+  }
+  .seg button.is-active { background: var(--ink); color: #fff; }
+  .chart { width: 100%; }
+  .chart svg { width: 100%; height: auto; display: block; }
+  .chart__legend { display: flex; gap: 16px; margin-bottom: 8px; font-size: 12.5px; color: var(--slate); }
+  .chart__legend .lg-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 6px; }
+
+  /* ---------- 关键节点时间线 ---------- */
+  .timeline { position: relative; padding-left: 26px; }
+  .timeline::before {
+    content: ""; position: absolute; left: 6px; top: 6px; bottom: 6px; width: 2px;
+    background: var(--grid); border-radius: 1px;
+  }
+  .tl-item { position: relative; padding-bottom: 18px; }
+  .tl-item:last-child { padding-bottom: 0; }
+  .tl-item::before {
+    content: ""; position: absolute; left: -26px; top: 3px; width: 12px; height: 12px;
+    border-radius: 50%; background: var(--card); border: 3px solid var(--line);
+  }
+  .tl-item.is-done::before { border-color: var(--green); background: var(--green); }
+  .tl-item.is-now::before { border-color: var(--blue); background: var(--blue); box-shadow: 0 0 0 4px rgba(29,111,184,.16); }
+  .tl-item.is-todo::before { border-color: var(--amber); background: var(--card); }
+  .tl-item__head { display: flex; align-items: center; gap: 8px; }
+  .tl-item__name { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+  .tl-tag { font-size: 11px; padding: 1px 8px; border-radius: 10px; }
+  .tl-tag.done { background: rgba(30,138,90,.12); color: var(--green); }
+  .tl-tag.now { background: rgba(29,111,184,.12); color: var(--blue); }
+  .tl-tag.todo { background: rgba(217,119,6,.12); color: var(--amber); }
+  .tl-item__info { font-size: 12px; color: var(--muted); margin-top: 5px; display: flex; gap: 14px; flex-wrap: wrap; }
+  .tl-item__info b { color: var(--slate); font-weight: 500; }
+  .tl-bar { margin-top: 8px; height: 5px; border-radius: 3px; background: var(--grid); overflow: hidden; }
+  .tl-bar i { display: block; height: 100%; border-radius: 3px; background: var(--blue); }
+
+  /* ---------- 进行中项目 / 预警 ---------- */
+  .list { display: flex; flex-direction: column; }
+  .list-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 2px; border-bottom: 1px solid var(--line);
+  }
+  .list-item:last-child { border-bottom: none; }
+  .list-item__main { flex: 1; min-width: 0; }
+  .list-item__name { font-size: 13.5px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .list-item__sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; font-family: var(--mono); }
+  .mini-bar { margin-top: 7px; height: 4px; border-radius: 2px; background: var(--grid); overflow: hidden; max-width: 220px; }
+  .mini-bar i { display: block; height: 100%; background: var(--blue); border-radius: 2px; }
+  .badge { font-size: 11px; padding: 2px 9px; border-radius: 10px; white-space: nowrap; }
+  .badge.blue { background: rgba(29,111,184,.12); color: var(--blue); }
+  .badge.green { background: rgba(30,138,90,.12); color: var(--green); }
+  .badge.amber { background: rgba(217,119,6,.12); color: var(--amber); }
+  .badge.red { background: rgba(198,61,43,.12); color: var(--red); }
+  .badge.gray { background: rgba(123,135,148,.12); color: var(--muted); }
+
+  .warn { display: flex; align-items: center; gap: 12px; padding: 13px 2px; border-bottom: 1px solid var(--line); }
+  .warn:last-child { border-bottom: none; }
+  .warn__flag { width: 4px; height: 34px; border-radius: 2px; flex-shrink: 0; }
+  .warn__flag.yellow { background: var(--amber); }
+  .warn__flag.red { background: var(--red); }
+  .warn__main { flex: 1; min-width: 0; }
+  .warn__name { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+  .warn__sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+  .warn__act button {
+    border: 1px solid var(--line); background: var(--card); color: var(--slate);
+    font-size: 11.5px; padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: all .15s;
+  }
+  .warn__act button:hover { border-color: var(--blue); color: var(--blue); }
+
+  .empty { padding: 26px 0; text-align: center; color: var(--muted); font-size: 13px; }
+  .loading { padding: 30px 0; text-align: center; color: var(--muted); font-size: 13px; }
+
+  /* ---------- 动效 ---------- */
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .panel, .hero { animation: rise .4s ease both; }
+  .panel:nth-child(2) { animation-delay: .05s; }
+  .panel:nth-child(3) { animation-delay: .1s; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+
+  /* ---------- 移动端菜单按钮(基类置于媒体查询前) ---------- */
+  .menu-toggle {
+    display: none; border: 1px solid var(--line); background: var(--card);
+    border-radius: 7px; width: 34px; height: 34px; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 15px; color: var(--ink);
+  }
+  .menu-scrim { display: none; }
+
+  /* ---------- 响应式 ---------- */
+  @media (max-width: 1080px) {
+    .hero { grid-template-columns: 1fr; }
+    .hero__gauge { border-left: none; border-top: 1px solid rgba(255,255,255,.1); }
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 820px) {
+    .sidebar { position: fixed; z-index: 50; transform: translateX(-100%); transition: transform .25s; }
+    .sidebar.is-open { transform: none; box-shadow: 0 0 0 100vmax rgba(18,38,58,.4); }
+    .topbar { padding: 12px 16px; }
+    .content { padding: 18px 14px 32px; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .search input { width: 150px; }
+    .menu-toggle { display: inline-flex; }
+    .sidebar.is-open + .menu-scrim { display: block; position: fixed; inset: 0; z-index: 40; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ============ 侧边栏 ============ -->
+  <aside class="sidebar" id="sidebar" aria-label="主导航">
+    <div class="brand">
+      <svg class="brand__mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <circle cx="16" cy="16" r="10" stroke="#e8a020" stroke-width="1.6"/>
+        <path d="M16 2v6M16 24v6M2 16h6M24 16h6" stroke="#cdd8e4" stroke-width="1.4"/>
+        <circle cx="16" cy="16" r="2.4" fill="#e8a020"/>
+      </svg>
+      <div>
+        <div class="brand__name">企业管理系统</div>
+        <div class="brand__sub">PIDMS · CONSOLE</div>
+      </div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidebar__foot">SITE-2026 / v1.0</div>
+  </aside>
+  <div class="menu-scrim" id="scrim"></div>
+
+  <!-- ============ 主区 ============ -->
+  <div class="shell">
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="menu-toggle" id="menuToggle" aria-label="打开菜单">☰</button>
+        <div class="topbar__crumb"><b>工作台</b> <span style="margin:0 6px;color:var(--line)">/</span> 项目总览</div>
+      </div>
+      <div class="topbar__right">
+        <div class="search">
+          <span class="search__icon">⌕</span>
+          <input type="search" id="projectSearch" placeholder="搜索进行中项目…" aria-label="搜索项目">
+        </div>
+        <div class="user">
+          <div class="user__avatar">吴</div>
+          <div class="user__meta">
+            <div class="user__name">吴十</div>
+            <div class="user__role">项目经理</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content">
+      <!-- 英雄区：结构柱进度仪 -->
+      <section class="hero" aria-label="项目总体进度">
+        <div class="hero__main">
+          <div class="hero__eyebrow">OVERALL PROGRESS · 项目总进度</div>
+          <div class="hero__value" id="heroValue">--<small>%</small></div>
+          <div class="hero__delta" id="heroDelta">数据加载中…</div>
+          <div class="hero__meta" id="heroMeta"></div>
+        </div>
+        <div class="hero__gauge" id="heroGauge" aria-hidden="true"></div>
+      </section>
+
+      <!-- 状态分布 + 合格率 -->
+      <div class="grid-2">
+        <section class="panel" aria-label="项目状态分布">
+          <div class="panel__head">
+            <div>
+              <div class="panel__eyebrow">PROJECT STATUS</div>
+              <h2 class="panel__title">项目状态分布</h2>
+            </div>
+          </div>
+          <div class="donut-wrap" id="statusDonut"><div class="loading">加载中…</div></div>
+        </section>
+
+        <section class="panel" aria-label="检查合格率">
+          <div class="panel__head">
+            <div>
+              <div class="panel__eyebrow">INSPECTION RATE</div>
+              <h2 class="panel__title">检查合格率</h2>
+            </div>
+          </div>
+          <div class="rate-list" id="rateList"><div class="loading">加载中…</div></div>
+        </section>
+      </div>
+
+      <!-- 趋势图 + 关键节点 -->
+      <div class="grid-2">
+        <section class="panel" aria-label="进度趋势">
+          <div class="panel__head">
+            <div>
+              <div class="panel__eyebrow">PLAN vs ACTUAL</div>
+              <h2 class="panel__title">进度趋势</h2>
+            </div>
+            <div class="seg" id="granSeg" role="group" aria-label="时间粒度">
+              <button data-g="day">自然日</button>
+              <button data-g="week" class="is-active">自然周</button>
+              <button data-g="month">自然月</button>
+            </div>
+          </div>
+          <div class="chart__legend">
+            <span><span class="lg-dot" style="background:var(--blue)"></span>计划进度</span>
+            <span><span class="lg-dot" style="background:var(--green)"></span>实际进度</span>
+          </div>
+          <div class="chart" id="trendChart"><div class="loading">加载中…</div></div>
+        </section>
+
+        <section class="panel" aria-label="项目关键节点">
+          <div class="panel__head">
+            <div>
+              <div class="panel__eyebrow">KEY MILESTONES</div>
+              <h2 class="panel__title">项目关键节点</h2>
+            </div>
+          </div>
+          <div class="timeline" id="keyNodes"><div class="loading">加载中…</div></div>
+        </section>
+      </div>
+
+      <!-- 进行中项目 + 预警 -->
+      <div class="grid-2">
+        <section class="panel" aria-label="进行中项目">
+          <div class="panel__head">
+            <div>
+              <div class="panel__eyebrow">ACTIVE PROJECTS</div>
+              <h2 class="panel__title">进行中项目</h2>
+            </div>
+            <a href="#" style="font-size:12.5px;color:var(--blue)">查看全部 →</a>
+          </div>
+          <div class="list" id="projectList"><div class="loading">加载中…</div></div>
+        </section>
+
+        <section class="panel" aria-label="预警规则">
+          <div class="panel__head">
+            <div>
+              <div class="panel__eyebrow">WARNING RULES</div>
+              <h2 class="panel__title">预警规则</h2>
+            </div>
+            <a href="#" style="font-size:12.5px;color:var(--blue)">管理 →</a>
+          </div>
+          <div class="list" id="warnList"><div class="loading">加载中…</div></div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* =====================================================================
+ * 配置
+ * ===================================================================*/
+const CONFIG = {
+  useMock: true,   // true = 本地模拟数据; false = 请求真实接口(与接口文档一致)
+  baseUrl: "/api",
+};
+
+/* =====================================================================
+ * 侧边栏菜单 —— 数据驱动，与 DLS原型图 导航一致
+ * 后续接入路由时，将 href 替换为真实路由地址即可
+ * ===================================================================*/
+const MENU = [
+  {
+    group: "项目管理",
+    items: [
+      { label: "项目", href: "#", target: "project" },
+      { label: "用印申请", href: "#", target: "seal-application" },
+    ],
+  },
+  {
+    group: "施工管理",
+    items: [
+      { label: "进度管理", href: "#", target: "progress" },
+      { label: "质量检查", href: "#", target: "quality-inspection" },
+      { label: "质量整改单", href: "#", target: "quality-rectification" },
+      { label: "安全检查", href: "#", target: "safety-inspection" },
+      { label: "安全整改单", href: "#", target: "safety-rectification" },
+      { label: "施工日志", href: "#", target: "construction-log" },
+      { label: "可视化管理", href: "#", target: "visualization" },
+      { label: "预警规则", href: "#", target: "warning-rule" },
+    ],
+  },
+  {
+    group: "基础管理",
+    items: [
+      { label: "基础资料", href: "#", target: "basic-info" },
+      { label: "客户", href: "#", target: "customer" },
+      { label: "供应商", href: "#", target: "supplier" },
+      { label: "内部单位", href: "#", target: "internal-unit" },
+    ],
+  },
+  {
+    group: "系统管理",
+    items: [
+      { label: "人员管理", href: "#", target: "personnel" },
+      { label: "机构管理", href: "#", target: "organization" },
+      { label: "角色管理", href: "#", target: "role-management" },
+    ],
+  },
+];
+
+/* =====================================================================
+ * API 数据层 —— 与「PIDMS接口文档」完全同构
+ * 每个方法对应文档中的一个接口；mock 返回结构与真实响应 data 一致。
+ * 接入后端：将 CONFIG.useMock 置为 false，并取消下方 fetch 注释。
+ * ===================================================================*/
+const mock = {
+  // GET /api/visualization/dashboard —— 看板总览
+  dashboard() {
+    return {
+      overallProgress: 75.42,
+      progressDelta: "+5.2% 较上周",
+      ongoingProjects: 2,
+      qualityCount: 12,
+      safetyCount: 5,
+      projectStatusDistribution: [
+        { status: "在建", count: 2, percent: 45 },
+        { status: "已完工", count: 1, percent: 30 },
+        { status: "规划中", count: 1, percent: 15 },
+        { status: "延期", count: 1, percent: 10 },
+      ],
+    };
+  },
+  // GET /api/visualization/progress-trend?granularity={day|week|month}
+  progressTrend(granularity) {
+    const series = {
+      day: [
+        { label: "D1", plan: 60, actual: 52 }, { label: "D2", plan: 64, actual: 58 },
+        { label: "D3", plan: 68, actual: 63 }, { label: "D4", plan: 72, actual: 66 },
+        { label: "D5", plan: 76, actual: 72 }, { label: "D6", plan: 80, actual: 75 },
+        { label: "D7", plan: 84, actual: 78 },
+      ],
+      week: [
+        { label: "W1", plan: 80, actual: 75 }, { label: "W2", plan: 85, actual: 82 },
+        { label: "W3", plan: 90, actual: 88 }, { label: "W4", plan: 95, actual: 92 },
+        { label: "W5", plan: 100, actual: 95 },
+      ],
+      month: [
+        { label: "M1", plan: 20, actual: 15 }, { label: "M2", plan: 40, actual: 38 },
+        { label: "M3", plan: 60, actual: 55 }, { label: "M4", plan: 80, actual: 78 },
+        { label: "M5", plan: 100, actual: 92 },
+      ],
+    };
+    return { granularity, series: series[granularity] || series.week };
+  },
+  // GET /api/visualization/inspection-stats —— 检查统计
+  inspectionStats() {
+    return { qualityRate: 92, safetyRate: 95, qualityCount: 12, safetyCount: 5 };
+  },
+  // GET /api/visualization/key-nodes —— 关键节点
+  keyNodes() {
+    return [
+      { name: "项目启动", status: "completed", planStart: "2025-01-15", planEnd: "2025-01-15", progress: 100 },
+      { name: "基础工程完成", status: "completed", planStart: "2025-04-01", planEnd: "2025-04-30", progress: 100 },
+      { name: "主体结构施工", status: "current", planStart: "2025-05-01", planEnd: "2025-09-30", owner: "张文琦", progress: 75 },
+      { name: "设备安装调试", status: "pending", planStart: "2025-10-01", planEnd: "2025-11-30", owner: "赵六", progress: 0 },
+      { name: "竣工验收", status: "pending", planStart: "2025-12-01", planEnd: "2025-12-31", owner: "王五", progress: 0 },
+    ];
+  },
+  // GET /api/projects?projectStatus=in-progress —— 进行中项目
+  activeProjects(keyword) {
+    const list = [
+      { id: 1, projectName: "墨西哥蒙特雷地铁6号线延长线项目", projectCode: "XM-2025-001", projectStatus: "在建", startDate: "2025-07-19", constructionUnit: "蒙特雷地铁建设公司", progress: 57.42 },
+      { id: 2, projectName: "墨西哥蒙特雷地铁4、6号线项目", projectCode: "XM-2022-002", projectStatus: "在建", startDate: "2022-09-30", constructionUnit: "蒙特雷地铁建设公司", progress: 50 },
+      { id: 3, projectName: "蒙特雷地铁6号线综合管网改造项目", projectCode: "XM-2025-003", projectStatus: "在建", startDate: "2025-03-01", constructionUnit: "中交一公局", progress: 68 },
+    ];
+    const kw = (keyword || "").trim().toLowerCase();
+    return { total: kw ? list.filter((p) => p.projectName.toLowerCase().includes(kw)).length : list.length, list: kw ? list.filter((p) => p.projectName.toLowerCase().includes(kw)) : list };
+  },
+  // GET /api/warning-rules —— 预警规则
+  warningRules() {
+    return {
+      list: [
+        { id: 1, ruleName: "蒙特雷项目进度预警规则", warningType: "进度停滞预警", level: "yellow", projectName: "墨西哥蒙特雷地铁6号线延长线项目", status: "enabled" },
+        { id: 2, ruleName: "蒙特雷项目质量预警规则", warningType: "质量问题预警", level: "red", projectName: "墨西哥蒙特雷地铁4、6号线项目", status: "enabled" },
+        { id: 3, ruleName: "安全巡检逾期预警", warningType: "安全预警", level: "yellow", projectName: "墨西哥蒙特雷地铁6号线延长线项目", status: "disabled" },
+      ],
+    };
+  },
+};
+
+/* 模拟网络延迟，便于看到加载态 */
+const delay = (ms = 260) => new Promise((r) => setTimeout(r, ms));
+
+async function http(path, params) {
+  // 真实接入时，取消下面注释并删除 mock 分支即可：
+  // const qs = params ? "?" + new URLSearchParams(params) : "";
+  // const res = await fetch(CONFIG.baseUrl + path + qs, { headers: { Authorization: "Bearer {token}" } });
+  // return res.json().then((r) => r.data);
+  return params;
+}
+
+const Api = {
+  async getDashboard() {
+    await delay();
+    if (!CONFIG.useMock) return http("/visualization/dashboard");
+    return mock.dashboard();
+  },
+  async getProgressTrend(granularity) {
+    await delay(200);
+    if (!CONFIG.useMock) return http("/visualization/progress-trend", { granularity });
+    return mock.progressTrend(granularity);
+  },
+  async getInspectionStats() {
+    await delay(200);
+    if (!CONFIG.useMock) return http("/visualization/inspection-stats");
+    return mock.inspectionStats();
+  },
+  async getKeyNodes() {
+    await delay(200);
+    if (!CONFIG.useMock) return http("/visualization/key-nodes");
+    return mock.keyNodes();
+  },
+  async getActiveProjects(keyword) {
+    await delay(200);
+    if (!CONFIG.useMock) return http("/projects", { projectStatus: "in-progress", keyword });
+    return mock.activeProjects(keyword);
+  },
+  async getWarningRules() {
+    await delay(200);
+    if (!CONFIG.useMock) return http("/warning-rules");
+    return mock.warningRules();
+  },
+};
+
+/* =====================================================================
+ * 工具 & SVG 生成
+ * ===================================================================*/
+function esc(s) {
+  return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/* 结构柱进度仪：一条被“浇筑”的结构柱，带勘测尺寸标注 */
+function columnGauge(percent) {
+  const H = 170, W = 210, top = 8, bottom = H - 8, colX = 82, colW = 44;
+  const fill = Math.max(0, Math.min(100, percent));
+  const fillH = ((bottom - top) * fill) / 100;
+  const fillY = bottom - fillH;
+  const ticks = [0, 25, 50, 75, 100];
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="总体进度 ${fill}%">`;
+  // 网格背景
+  svg += `<g stroke="rgba(255,255,255,.06)" stroke-width="1">`;
+  for (let y = top; y <= bottom; y += (bottom - top) / 4) {
+    svg += `<line x1="6" y1="${y}" x2="${W - 6}" y2="${y}"/>`;
+  }
+  svg += `</g>`;
+  // 刻度与标签
+  svg += `<g font-family="Consolas, monospace" font-size="9" fill="#8fa6bd" text-anchor="end">`;
+  ticks.forEach((t) => {
+    const y = bottom - ((bottom - top) * t) / 100;
+    svg += `<line x1="${colX - 12}" y1="${y}" x2="${colX}" y2="${y}" stroke="#8fa6bd" stroke-width="1"/>`;
+    svg += `<text x="${colX - 16}" y="${y + 3}">${t}</text>`;
+  });
+  svg += `</g>`;
+  // 结构柱外壳
+  svg += `<rect x="${colX}" y="${top}" width="${colW}" height="${bottom - top}" fill="none" stroke="#eef3f8" stroke-opacity=".35" stroke-width="1.2"/>`;
+  // 已浇筑填充(渐变)
+  if (fillH > 0) {
+    svg += `<defs><linearGradient id="colFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8a020"/><stop offset="1" stop-color="#d97706"/></linearGradient></defs>`;
+    svg += `<rect x="${colX + 1.5}" y="${fillY}" width="${colW - 3}" height="${fillH}" fill="url(#colFill)" opacity=".9"/>`;
+  }
+  // 柱内液面线
+  svg += `<line x1="${colX - 4}" y1="${fillY}" x2="${colX + colW + 4}" y2="${fillY}" stroke="#e8a020" stroke-width="1.6"/>`;
+  // 尺寸标注线(右侧)
+  const dimX = colX + colW + 26;
+  svg += `<line x1="${dimX}" y1="${top}" x2="${dimX}" y2="${bottom}" stroke="#8fa6bd" stroke-width="1" stroke-dasharray="3 3"/>`;
+  svg += `<path d="M ${dimX - 4} ${top + 6} l 4 -6 l 4 6 M ${dimX - 4} ${bottom - 6} l 4 6 l 4 -6" fill="none" stroke="#8fa6bd" stroke-width="1"/>`;
+  svg += `<text x="${dimX + 8}" y="${fillY + 3}" fill="#fff" font-family="Bahnschrift, Segoe UI, sans-serif" font-size="16" font-weight="600">${fill.toFixed(1)}%</text>`;
+  // 顶部十字准星
+  svg += `<g stroke="#eef3f8" stroke-opacity=".5" stroke-width="1"><circle cx="${colX + colW / 2}" cy="${top - 6}" r="5" fill="none"/><path d="M ${colX + colW / 2} ${top - 13} v 14 M ${colX + colW / 2 - 7} ${top - 6} h 14"/></g>`;
+  svg += `</svg>`;
+  return svg;
+}
+
+/* 环形图：项目状态分布 */
+function donut(segments) {
+  const R = 62, C = 2 * Math.PI * R, cx = 84, cy = 84;
+  let svg = `<svg viewBox="0 0 168 168">`;
+  svg += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#e6eaee" stroke-width="22"/>`;
+  let offset = 0;
+  const colors = { 在建: "var(--blue)", 已完工: "var(--green)", 规划中: "var(--amber)", 延期: "var(--red)" };
+  segments.forEach((s) => {
+    const len = (C * (s.percent || 0)) / 100;
+    svg += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${colors[s.status] || "var(--muted)"}" stroke-width="22"
+      stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
+    offset += len;
+  });
+  svg += `</svg>`;
+  return svg;
+}
+
+/* 折线图：计划 vs 实际 */
+function lineChart(series) {
+  const W = 600, H = 240, padL = 34, padR = 14, padT = 12, padB = 26;
+  const iw = W - padL - padR, ih = H - padT - padB;
+  const max = 100;
+  const X = (i) => padL + (series.length === 1 ? iw / 2 : (i * iw) / (series.length - 1));
+  const Y = (v) => padT + ih - (v / max) * ih;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="进度趋势折线图">`;
+  // 网格
+  svg += `<g stroke="#e6eaee" stroke-width="1">`;
+  [0, 25, 50, 75, 100].forEach((v) => {
+    svg += `<line x1="${padL}" y1="${Y(v)}" x2="${W - padR}" y2="${Y(v)}"/>`;
+    svg += `<text x="${padL - 7}" y="${Y(v) + 3}" fill="#7b8794" font-family="Consolas,monospace" font-size="9.5" text-anchor="end">${v}</text>`;
+  });
+  svg += `</g>`;
+  // X 轴标签
+  series.forEach((s, i) => {
+    svg += `<text x="${X(i)}" y="${H - 8}" fill="#7b8794" font-family="Consolas,monospace" font-size="10" text-anchor="middle">${esc(s.label)}</text>`;
+  });
+  // 折线
+  const poly = (key, color) => {
+    const pts = series.map((s, i) => `${X(i).toFixed(1)},${Y(s[key]).toFixed(1)}`).join(" ");
+    svg += `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>`;
+    series.forEach((s, i) => {
+      svg += `<circle cx="${X(i).toFixed(1)}" cy="${Y(s[key]).toFixed(1)}" r="3.2" fill="${color}"/>`;
+    });
+  };
+  poly("plan", "#1d6fb8");
+  poly("actual", "#1e8a5a");
+  svg += `</svg>`;
+  return svg;
+}
+
+/* =====================================================================
+ * 渲染
+ * ===================================================================*/
+function renderSidebar() {
+  const nav = document.getElementById("nav");
+  nav.innerHTML = MENU.map((g) => `
+    <div class="nav-group">
+      <div class="nav-group__title">${esc(g.group)}</div>
+      <ul class="nav-group__list">
+        ${g.items.map((it) => `
+          <li class="nav-item" data-target="${esc(it.target)}">
+            <a href="${esc(it.href)}"><span class="nav-item__dot"></span>${esc(it.label)}</a>
+          </li>`).join("")}
+      </ul>
+    </div>`).join("");
+  nav.addEventListener("click", (e) => {
+    const li = e.target.closest(".nav-item");
+    if (!li) return;
+    nav.querySelectorAll(".nav-item").forEach((n) => n.classList.remove("is-active"));
+    li.classList.add("is-active");
+    if (li.dataset.target !== "dashboard") {
+      // 页面尚未开发，提示占位；接入路由后替换为真实跳转
+      console.info("[路由占位] 即将跳转到模块：", li.dataset.target);
+    }
+  });
+}
+
+function renderHero(d) {
+  document.getElementById("heroValue").innerHTML = `${d.overallProgress.toFixed(2)}<small>%</small>`;
+  document.getElementById("heroDelta").innerHTML = `<span class="up">▲ ${esc(d.progressDelta)}</span>`;
+  document.getElementById("heroMeta").innerHTML = [
+    { v: d.ongoingProjects, k: "进行中项目" },
+    { v: d.qualityCount, k: "本月质检次数" },
+    { v: d.safetyCount, k: "本月安检次数" },
+  ].map((m) => `<div class="hero__meta-item"><div class="v">${m.v}</div><div class="k">${m.k}</div></div>`).join("");
+  document.getElementById("heroGauge").innerHTML = columnGauge(d.overallProgress);
+}
+
+function renderStatusDonut(d) {
+  const el = document.getElementById("statusDonut");
+  const total = d.projectStatusDistribution.reduce((a, s) => a + s.count, 0);
+  el.innerHTML = `
+    <div class="donut">${donut(d.projectStatusDistribution)}
+      <div class="donut__center"><div class="t">${total}</div><div class="k">总项目数</div></div>
+    </div>
+    <div class="legend">${d.projectStatusDistribution.map((s) => `
+      <div class="legend__row">
+        <span class="legend__swatch" style="background:${({在建:"var(--blue)",已完工:"var(--green)",规划中:"var(--amber)",延期:"var(--red)"})[s.status] || "var(--muted)"}"></span>
+        <span class="legend__name">${esc(s.status)}</span>
+        <span class="legend__pct">${s.percent}%</span>
+      </div>`).join("")}
+    </div>`;
+}
+
+function renderRates(d) {
+  const el = document.getElementById("rateList");
+  el.innerHTML = [
+    { name: "质量检查合格率", val: d.qualityRate, color: "var(--blue)", foot: [`本月质检 ${d.qualityCount} 次`] },
+    { name: "安全检查合格率", val: d.safetyRate, color: "var(--green)", foot: [`本月安检 ${d.safetyCount} 次`] },
+  ].map((r) => `
+    <div class="rate-item">
+      <div class="rate-item__head">
+        <span class="rate-item__name">${r.name}</span>
+        <span class="rate-item__val">${r.val}%</span>
+      </div>
+      <div class="rate-track">
+        <div class="rate-track__fill" style="width:${r.val}%;background:${r.color}"></div>
+        <div class="rate-track__ticks"></div>
+      </div>
+      <div class="rate-item__foot">${r.foot.map((f) => `<span>${f}</span>`).join("")}</div>
+    </div>`).join("");
+}
+
+function renderTrend(d) {
+  document.getElementById("trendChart").innerHTML = lineChart(d.series);
+}
+
+function renderKeyNodes(d) {
+  const el = document.getElementById("keyNodes");
+  const tagMap = { completed: ["done", "已完成"], current: ["now", "进行中"], pending: ["todo", "未开始"] };
+  el.innerHTML = d.map((n) => {
+    const [cls, tagText] = tagMap[n.status] || tagMap.pending;
+    return `
+    <div class="tl-item is-${cls}">
+      <div class="tl-item__head"><span class="tl-item__name">${esc(n.name)}</span><span class="tl-tag ${cls}">${tagText}</span></div>
+      <div class="tl-item__info">
+        <span>计划：<b>${esc(n.planStart)}</b> ~ <b>${esc(n.planEnd)}</b></span>
+        ${n.owner ? `<span>负责人：<b>${esc(n.owner)}</b></span>` : ""}
+        <span>进度：<b>${n.progress}%</b></span>
+      </div>
+      <div class="tl-bar"><i style="width:${Math.max(2, n.progress)}%"></i></div>
+    </div>`;
+  }).join("");
+}
+
+function renderProjects(d) {
+  const el = document.getElementById("projectList");
+  if (!d.list.length) { el.innerHTML = `<div class="empty">未找到进行中的项目</div>`; return; }
+  el.innerHTML = d.list.map((p) => `
+    <div class="list-item">
+      <div class="list-item__main">
+        <div class="list-item__name">${esc(p.projectName)}</div>
+        <div class="list-item__sub">${esc(p.projectCode)} · 开工 ${esc(p.startDate)}</div>
+        <div class="mini-bar"><i style="width:${p.progress}%"></i></div>
+      </div>
+      <span class="badge blue">${esc(p.projectStatus)}</span>
+      <span class="badge gray" style="font-family:var(--mono)">${p.progress}%</span>
+    </div>`).join("");
+}
+
+function renderWarnings(d) {
+  const el = document.getElementById("warnList");
+  el.innerHTML = d.list.map((w) => `
+    <div class="warn">
+      <span class="warn__flag ${w.level === "red" ? "red" : "yellow"}"></span>
+      <div class="warn__main">
+        <div class="warn__name">${esc(w.ruleName)}</div>
+        <div class="warn__sub">${esc(w.warningType)} · ${esc(w.projectName)}</div>
+      </div>
+      <div class="warn__act">
+        <button data-id="${w.id}" data-status="${w.status}" aria-label="切换${esc(w.ruleName)}启停">${w.status === "enabled" ? "禁用" : "启用"}</button>
+      </div>
+    </div>`).join("");
+  el.querySelectorAll("button").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      // POST /api/warning-rules/{id}/enable | /disable
+      const next = btn.dataset.status === "enabled" ? "disabled" : "enabled";
+      btn.dataset.status = next;
+      btn.textContent = next === "enabled" ? "禁用" : "启用";
+    });
+  });
+}
+
+/* =====================================================================
+ * 初始化
+ * ===================================================================*/
+async function init() {
+  renderSidebar();
+
+  // 移动端菜单
+  const sidebar = document.getElementById("sidebar");
+  const toggle = document.getElementById("menuToggle");
+  const scrim = document.getElementById("scrim");
+  toggle.addEventListener("click", () => sidebar.classList.toggle("is-open"));
+  scrim.addEventListener("click", () => sidebar.classList.remove("is-open"));
+
+  try {
+    const [dash, trend, rates, nodes, projects, warnings] = await Promise.all([
+      Api.getDashboard(),
+      Api.getProgressTrend("week"),
+      Api.getInspectionStats(),
+      Api.getKeyNodes(),
+      Api.getActiveProjects(""),
+      Api.getWarningRules(),
+    ]);
+    renderHero(dash);
+    renderStatusDonut(dash);
+    renderRates(rates);
+    renderTrend(trend);
+    renderKeyNodes(nodes);
+    renderProjects(projects);
+    renderWarnings(warnings);
+  } catch (err) {
+    console.error("数据加载失败：", err);
+    document.querySelectorAll(".panel, .hero").forEach(() => {});
+  }
+
+  // 粒度切换：GET /api/visualization/progress-trend?granularity=...
+  const seg = document.getElementById("granSeg");
+  seg.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    seg.querySelectorAll("button").forEach((b) => b.classList.remove("is-active"));
+    btn.classList.add("is-active");
+    const trend = await Api.getProgressTrend(btn.dataset.g);
+    renderTrend(trend);
+  });
+
+  // 项目搜索：GET /api/projects?keyword=...
+  const searchInput = document.getElementById("projectSearch");
+  let t = null;
+  searchInput.addEventListener("input", async (e) => {
+    clearTimeout(t);
+    t = setTimeout(async () => {
+      const projects = await Api.getActiveProjects(e.target.value);
+      renderProjects(projects);
+    }, 180);
+  });
+}
+
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
