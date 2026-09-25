@@ -6,41 +6,51 @@ import com.pidms.pidmsbackend.common.UserContext;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
- * 登录拦截器：校验 Authorization: Bearer <uuid> 是否在内存 token 表中。
- * 未登录返回 401 JSON。
+ * 登录拦截器：校验 Authorization: Bearer {token}。
+ *
+ * 校验通过后把登录用户写入项目统一的 {@link UserContext}（Service 里的 createBy/updateBy、
+ * Controller 里的操作人都从它取），请求结束时清理，避免线程复用导致串号。
  */
+@Slf4j
 @Component
 public class AuthInterceptor implements HandlerInterceptor {
 
     @Resource
     private TokenStore tokenStore;
-    @Resource
-    private UserContext userContext;
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        // CORS 预检请求直接放行
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-            return true;
-        }
-
-        String auth = request.getHeader("Authorization");
-        String token = (auth != null && auth.startsWith("Bearer ")) ? auth.substring(7) : null;
-        LoginUser user = tokenStore.get(token);
-
-        if (user == null) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json;charset=UTF-8");
-            response.getWriter().write("{\"code\":401,\"message\":\"未登录或登录已过期\",\"data\":null}");
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        String token = extractToken(request);
+        if(token == null) {
+            response.setStatus(401);
             return false;
         }
-
-        // 当前登录用户放入 request，Controller 可取用（如记录 createBy）
-        userContext.setUser(user);
+        LoginUser loginUser = tokenStore.get(token);
+        if(loginUser == null) {
+            response.setStatus(401);
+            return false;
+        }
+        tokenStore.renew(token);
+        UserContext.setUser(loginUser);
         return true;
+    }
+
+    private String extractToken(HttpServletRequest request) {
+        String auth = request.getHeader("Authorization");
+        if (auth != null && auth.startsWith("Bearer ")) {
+            return auth.substring(7);
+        }
+        return null;
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+        // 清除ThreadLocal，防止内存泄漏
+        UserContext.clear();
     }
 }

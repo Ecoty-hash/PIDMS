@@ -24,6 +24,9 @@ public class Progress {
     /** 项目ID → pm_project.id */
     private Long projectId;
 
+    /** 父节点ID → cm_progress.id；NULL 为顶层节点（支持多层子节点） */
+    private Long parentId;
+
     /** 进度名称 */
     private String progressName;
 
@@ -42,13 +45,19 @@ public class Progress {
     /** 实际结束日期 */
     private LocalDate actualEndDate;
 
-    /** 完成百分比(0-100) */
+    /** 完成百分比(0-100)；有子节点时不参与计算，页面显示的是子节点加权汇总值 */
     private BigDecimal completionPercent;
+
+    /** 占总进度百分比(0-100)，只有叶子节点需要填；未填时按同组均分 */
+    private BigDecimal weight;
 
     /** 进度状态：in-progress进行中 / completed已完成 / delayed延期 */
     private String progressStatus;
 
-    /** 备注 */
+    /** 节点负责人（真实姓名），候选来源 pm_project.project_members；可为空 */
+    private String responsiblePerson;
+
+    /** 备注（页面上的「节点描述」） */
     private String remark;
 
     /** 创建人 */

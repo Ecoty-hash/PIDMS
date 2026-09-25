@@ -78,6 +78,20 @@
                             </select>
                         </div>
                         <div class="form-group">
+                            <label>上级节点</label>
+                            <select>
+                                <option value="">（顶层节点）</option>
+                                <option value="1" selected>墨西哥蒙特雷地铁6号线延长线项目 / 施工阶段</option>
+                                <option value="2">　└ 1.1 设计与准备阶段</option>
+                            </select>
+                            <div class="field-hint">不选则为顶层节点；候选只列同项目节点，且已排除自身与子节点</div>
+                        </div>
+                        <div class="form-group">
+                            <label>占总进度%</label>
+                            <input type="number" placeholder="0-100，不填则与同级未填节点平分" min="0" max="100" value="40">
+                            <div class="field-hint">只有叶子节点需要填：项目进度 = Σ(占总进度% × 完成度) ÷ Σ权重；父节点的份额由子节点汇总</div>
+                        </div>
+                        <div class="form-group">
                             <label>进度名称 <span class="required">*</span></label>
                             <input type="text" placeholder="请输入进度名称" value="地下管网基础施工" required>
                         </div>
@@ -104,6 +118,17 @@
                         <div class="form-group">
                             <label>完成百分比</label>
                             <input type="number" placeholder="请输入 0-100" min="0" max="100" value="75">
+                            <div class="field-hint">父节点的完成度由子节点按权重自动汇总，不可手填；占总进度% 同样由子树汇总</div>
+                        </div>
+                        <div class="form-group">
+                            <label>节点负责人</label>
+                            <select>
+                                <option value="">请选择负责人</option>
+                                <option value="吴十">吴十</option>
+                                <option value="张文琦">张文琦</option>
+                                <option value="王五">王五</option>
+                            </select>
+                            <div class="field-hint">从内部人员名单（在职）中选</div>
                         </div>
                         <div class="form-group">
                             <label>进度状态</label>

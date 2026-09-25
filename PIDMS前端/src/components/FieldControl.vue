@@ -4,6 +4,7 @@
     v-if="field.type === 'string'"
     type="text"
     :value="modelValue"
+    :disabled="field.disabled"
     :placeholder="field.placeholder || `请输入${field.label}`"
     @input="$emit('update:modelValue', $event.target.value)"
   />
@@ -13,6 +14,7 @@
     v-else-if="field.type === 'number'"
     type="number"
     :value="modelValue"
+    :disabled="field.disabled"
     :placeholder="field.placeholder"
     @input="$emit('update:modelValue', $event.target.value === '' ? null : Number($event.target.value))"
   />
@@ -53,9 +55,10 @@
   <select
     v-else-if="field.type === 'enum'"
     :value="modelValue"
+    :disabled="field.disabled"
     @change="$emit('update:modelValue', $event.target.value)"
   >
-    <option value="">请选择</option>
+    <option value="">{{ field.emptyLabel || "请选择" }}</option>
     <option v-for="o in field.options" :key="o.value" :value="o.value">{{ o.label }}</option>
   </select>
 
@@ -130,3 +133,14 @@ watch(
   }
 );
 </script>
+
+<style scoped>
+/* 只读字段（如父节点的完成度 / 占总进度%，由子节点汇总得出） */
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background: var(--paper-2);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+</style>

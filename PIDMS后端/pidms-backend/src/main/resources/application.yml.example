@@ -3,6 +3,9 @@
 #
 # 也可以不复制文件，直接通过环境变量注入：
 #   DB_URL / DB_USERNAME / DB_PASSWORD
+#
+# 注意：redis 必须在 spring.data.redis 下（不要缩进到其他节点里，否则配置不生效）。
+# 登录 token 与忘记密码的 resetTicket 都存在 Redis 中，未装 Redis 则无法登录。
 
 spring:
   datasource:
@@ -10,6 +13,24 @@ spring:
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      # redis主机地址，本地就是127.0.0.1
+      host: ${REDIS_HOST:127.0.0.1}
+      # 默认端口
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      # 选用第0号数据库
+      database: 0
+      # 连接超时时间
+      timeout: 10s
+      # Lettuce连接池配置（springboot3默认客户端）
+      lettuce:
+        pool:
+          max-active: 8    #最大连接数
+          max-idle: 8      #最大空闲连接
+          min-idle: 2      #最小空闲连接
+          max-wait: 5000ms #获取连接最长等待时间
 
 mybatis-plus:
   mapper-locations: classpath:mapper/**/*.xml

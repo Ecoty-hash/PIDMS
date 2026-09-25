@@ -67,10 +67,15 @@ export function clearAuth() {
  *  POST /api/auth/login  body: { username, password }
  *    → data: { token, user: { username, realName, role } }
  *  POST /api/auth/logout
+ *  POST /api/auth/forgot-password/verify  body: { username, phone }
+ *    → data: { resetTicket, expiresIn }   // 校验用户名+手机号+账号启用，签发一次性票据
+ *  POST /api/auth/reset-password  body: { resetTicket, newPassword }
  */
 export const authApi = {
   login: (data) => request("/auth/login", { method: "POST", body: data }),
   logout: () => request("/auth/logout", { method: "POST" }),
+  verifyForgotPassword: (data) => request("/auth/forgot-password/verify", { method: "POST", body: data }),
+  resetPassword: (data) => request("/auth/reset-password", { method: "POST", body: data }),
 };
 
 async function realRequest(path, { method = "GET", params, body } = {}) {
@@ -161,13 +166,31 @@ export function getModuleApi(mod) {
   };
 }
 
-// ---------------- 工作台（可视化管理）接口 ----------------
+// ---------------- 进度节点（项目进度详情页）接口 ----------------
+export const progressApi = {
+  // 项目进度详情：项目基础信息 + 进度汇总 + 节点列表 + 负责人候选
+  board: (projectId) => http.get("/progress/board", { projectId }),
+  // 上级节点候选：按项目过滤，编辑时传 excludeId 排除自身与子孙（防循环层级）
+  parentOptions: (projectId, excludeId) =>
+    http.get("/progress/parent-options", { projectId, excludeId }),
+  create: (data) => http.post("/progress", data),
+  update: (id, data) => http.put(`/progress/${id}`, { id, ...data }),
+  remove: (id) => http.del(`/progress/${id}`),
+};
+
+// ---------------- 工作台（个人视角）接口 ----------------
+export const workbenchApi = {
+  // 待我审批 / 我的项目 / 逾期节点预警 / 最近施工日志 / 我发起的申请
+  overview: () => http.get("/workbench/overview"),
+};
+
+// ---------------- 可视化管理（全局视角）接口 ----------------
 export const dashboardApi = {
+  // 项目规模、总体进度（实际 vs 计划）、状态分布、分项目进度对比
   overview: () => http.get("/visualization/dashboard"),
   progressTrend: (granularity) => http.get("/visualization/progress-trend", { granularity }),
+  // 质量/安全检查合格率与整改闭环率
   inspectionStats: () => http.get("/visualization/inspection-stats"),
-  keyNodes: () => http.get("/visualization/key-nodes"),
   projectStatus: () => http.get("/visualization/project-status"),
-  activeProjects: (keyword) => http.get("/projects", { projectStatus: "in-progress", keyword }),
-  warningRules: () => http.get("/warning-rules"),
+  keyNodes: (projectId) => http.get("/visualization/key-nodes", { projectId }),
 };

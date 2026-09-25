@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed, watch } from "vue";
+import { useRouter } from "vue-router";
 import { getModule } from "@/config/modules.js";
-import { getModuleApi } from "@/api/request.js";
+import { getModuleApi, http } from "@/api/request.js";
 import { useToast } from "@/composables/useToast.js";
 import DataTable from "@/components/DataTable.vue";
 import SearchPanel from "@/components/SearchPanel.vue";
@@ -14,6 +15,7 @@ const props = defineProps({
 });
 
 const toast = useToast();
+const router = useRouter();
 const module = computed(() => getModule(props.moduleKey));
 const api = computed(() => getModuleApi(module.value));
 
@@ -78,11 +80,33 @@ function enumFromSources() {
   [...(module.value.form || []), ...(module.value.search || [])].forEach((f) => {
     if (!f.enumFrom) return;
     const src = f.enumFrom;
+    // path 型（如「上级节点」，候选依赖所选项目）由 ModalForm 回调 loadFieldOptions 按需加载
+    if (src.path || !src.resource) return;
     const key = `${src.resource}|${JSON.stringify(src.params || {})}`;
     if (!seen.has(key)) seen.set(key, { fields: [], src });
     seen.get(key).fields.push(f);
   });
   return [...seen.values()];
+}
+
+/* 记录里的值 → 逐值数组（用于判断「值还在不在候选里」）。
+ * 多值字段（field.valueSeparator，如「项目成员」的 "吴十,赵六"）逗号串要拆开逐个判断。 */
+function recordValues(f, raw) {
+  if (raw === null || raw === undefined || raw === "") return [];
+  if (!f.valueSeparator) return [raw];
+  if (Array.isArray(raw)) return raw.filter((x) => x !== null && x !== undefined && x !== "");
+  return String(raw)
+    .split(/[,，]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/* 候选补全：记录里已有、但不在候选里的值，补成可选项。
+ * 场景：人已离职（status=disabled 不在「在职」候选里）、字典项已停用/删除。
+ * 不补的话编辑时下拉是空的，一保存原值就被冲掉。多值字段逐个姓名补。 */
+function withFallback(f, raw, list) {
+  const miss = recordValues(f, raw).filter((v) => !list.some((o) => String(o.value) === String(v)));
+  return [...miss.map((v) => ({ value: v, label: v })), ...list];
 }
 
 async function loadOptions(record) {
@@ -108,19 +132,10 @@ async function loadOptions(record) {
     }
 
     fields.forEach((f) => {
-      const cur = record && record[f.name];
-      let merged = opts;
-      let mergedAll = allOpts;
-      // 编辑/回显时：当前值若已不在列表（如已被停用/删除），保留原值可选项
-      const needFallback = cur !== null && cur !== undefined && cur !== "";
-      if (needFallback && !merged.some((o) => String(o.value) === String(cur))) {
-        merged = [{ value: cur, label: cur }, ...merged];
-      }
-      if (needFallback && !mergedAll.some((o) => String(o.value) === String(cur))) {
-        mergedAll = [{ value: cur, label: cur }, ...mergedAll];
-      }
-      dynamicOpts.value[f.name] = merged;
-      displayOpts.value[f.name] = mergedAll;
+      // 编辑回显：当前值若不在候选里（人已离职、字典项停用/删除）由 withFallback 补成可选项
+      const raw = record && record[f.name];
+      dynamicOpts.value[f.name] = withFallback(f, raw, opts);
+      displayOpts.value[f.name] = withFallback(f, raw, allOpts);
     });
   }));
 }
@@ -143,6 +158,100 @@ async function load() {
   }
 }
 
+/* ---------- 联动下拉（enumFrom.dependsOn：如「上级节点」依赖「项目名称」） ----------
+ * 这类字段的候选不能一次性预加载，要等依赖项选好后再按 path + 依赖值拉取；
+ * 由 ModalForm 在打开弹窗、依赖项变化时回调本函数。
+ */
+async function loadFieldOptions(field, values) {
+  const src = field.enumFrom || {};
+  if (!src.path) return [];
+  const params = { ...(src.params || {}) };
+  if (src.dependsOn) {
+    const dep = values[src.dependsOn];
+    if (dep === "" || dep === null || dep === undefined) return []; // 依赖项还没选，暂无候选
+    params[src.dependsOn] = dep;
+  }
+  if (src.excludeSelf && modal.value.record?.id) params.excludeId = modal.value.record.id;
+
+  const data = await http.get(src.path, params);
+  const list = Array.isArray(data) ? data : (data && data.list) || [];
+  const vk = src.valueKey || "id";
+  const lk = src.labelKey || vk;
+  return list
+    .filter((r) => r[vk] !== null && r[vk] !== undefined && String(r[vk]).trim() !== "")
+    .map((r) => {
+      const label = r[lk] === null || r[lk] === undefined ? String(r[vk]) : String(r[lk]);
+      // indentBy：层级字段（如 level），用缩进 + 折线让下拉里也能看出父子关系
+      const depth = src.indentBy ? Number(r[src.indentBy]) || 0 : 0;
+      return { value: r[vk], label: depth > 0 ? "　".repeat(depth) + "└ " + label : label };
+    });
+}
+
+/* ---------- 树形列表（module.tree：子节点收纳在总节点下，点击展开/折叠） ----------
+ * 后端按普通分页返回扁平行，这里把「本页」的行按 parentId 组成树：
+ * 上级节点不在本页的行提升为顶层展示（否则翻页后子节点会整片消失）。
+ */
+const treeExpanded = ref(new Set());
+
+function flattenTree(list) {
+  const byId = new Map(list.map((r) => [String(r.id), r]));
+  const childrenOf = new Map();
+  const roots = [];
+  list.forEach((r) => {
+    const pid = r.parentId === null || r.parentId === undefined ? null : String(r.parentId);
+    if (pid !== null && pid !== String(r.id) && byId.has(pid)) {
+      if (!childrenOf.has(pid)) childrenOf.set(pid, []);
+      childrenOf.get(pid).push(r);
+    } else {
+      roots.push(r);
+    }
+  });
+
+  // 可达 = 顶层节点的整棵子树。判据必须是「可达」而不是「已渲染」：
+  // 折叠中的子节点本来就没渲染，拿「已渲染」当判据会把它们全提到顶层，收起就失效了。
+  const reachable = new Set();
+  const mark = (row) => {
+    const key = String(row.id);
+    if (reachable.has(key)) return;
+    reachable.add(key);
+    (childrenOf.get(key) || []).forEach(mark);
+  };
+  roots.forEach(mark);
+
+  const out = [];
+  const emitted = new Set();
+  const walk = (row, depth) => {
+    const key = String(row.id);
+    if (emitted.has(key)) return; // 环状脏数据保护
+    emitted.add(key);
+    const kids = childrenOf.get(key) || [];
+    const expanded = treeExpanded.value.has(key);
+    out.push({ ...row, __depth: depth, __hasChildren: kids.length > 0, __expanded: expanded });
+    if (expanded) kids.forEach((k) => walk(k, depth + 1));
+  };
+  roots.forEach((r) => walk(r, 0));
+  // 兜底：互为父子的脏数据谁都不是根（够不到），这里当顶层补回来，避免整行不显示
+  list.forEach((r) => {
+    if (!reachable.has(String(r.id))) walk(r, 0);
+  });
+  return out;
+}
+
+const visibleRows = computed(() => (module.value.tree ? flattenTree(rows.value) : rows.value));
+
+function onToggleExpand(row) {
+  const key = String(row.id);
+  const s = new Set(treeExpanded.value);
+  s.has(key) ? s.delete(key) : s.add(key);
+  treeExpanded.value = s;
+}
+function expandAll() {
+  treeExpanded.value = new Set(rows.value.filter((r) => r.childCount > 0).map((r) => String(r.id)));
+}
+function collapseAll() {
+  treeExpanded.value = new Set();
+}
+
 watch(() => props.moduleKey, () => {
   page.value = 1;
   keyword.value = "";
@@ -150,6 +259,7 @@ watch(() => props.moduleKey, () => {
   showAdv.value = false;
   dynamicOpts.value = {};
   displayOpts.value = {};
+  treeExpanded.value = new Set();
   loadOptions().catch(() => {}); // 搜索/表单下拉的字典选项，失败不阻塞列表
   load();
 }, { immediate: true });
@@ -192,12 +302,13 @@ function openDetail(record) {
 }
 
 async function onModalSubmit(data) {
+  const payload = normalizeSubmit(data);
   try {
     if (modal.value.mode === "create") {
-      await api.value.create(data);
+      await api.value.create(payload);
       toast.success(`已新增${title.value}`);
     } else {
-      await api.value.update(modal.value.record.id, data);
+      await api.value.update(modal.value.record.id, payload);
       toast.success(`已更新${title.value}`);
     }
     modal.value.visible = false;
@@ -207,11 +318,31 @@ async function onModalSubmit(data) {
   }
 }
 
+/**
+ * 提交前的字段规整：下拉留空时按后端约定翻译。
+ * 例如进度节点的「上级节点」留空 = 顶层节点，而后端编辑接口把 parentId=null 当作「本次不修改」，
+ * 所以要带上 topLevel 标记，否则「把子节点提到顶层」保存不生效（与 actual_end_date 同一个坑）。
+ */
+function normalizeSubmit(data) {
+  const out = { ...data };
+  (module.value.form || []).forEach((f) => {
+    if (!f.emptyToNull) return;
+    const v = out[f.name];
+    if (v === "" || v === null || v === undefined) {
+      delete out[f.name];
+      if (f.emptyFlag) out[f.emptyFlag] = true;
+    }
+  });
+  return out;
+}
+
 /* ---------- 行操作 ---------- */
 async function onTableAction({ name, record }) {
   if (name === "查看") return openDetail(record);
   if (name === "编辑") return openEdit(record);
   if (name === "删除") return askDelete(record);
+  // 项目的「进度」动作：跳到该项目的进度详情页（甘特图 + 节点管理）
+  if (name === "进度") return router.push(`/project/${record.id}/progress`);
   const sp = module.value.special.find((s) => s.label === name);
   if (sp) {
     // 动作文案以行当前状态现算，不依赖表格传来的 label，
@@ -397,6 +528,10 @@ const pageList = computed(() => {
           <button class="btn" @click="showAdv = !showAdv">
             {{ showAdv ? "收起高级搜索" : "高级搜索" }}
           </button>
+          <template v-if="module.tree">
+            <button class="btn" @click="expandAll">展开全部</button>
+            <button class="btn" @click="collapseAll">收起全部</button>
+          </template>
         </div>
         <div class="toolbar__right">
           <button
@@ -424,11 +559,13 @@ const pageList = computed(() => {
       <DataTable
         ref="tableRef"
         :columns="displayColumns"
-        :rows="rows"
+        :rows="visibleRows"
         :loading="loading"
         :row-actions="module.rowActions"
+        :tree="!!module.tree"
         :action-label="resolveRowActionLabel"
         @action="onTableAction"
+        @toggle-expand="onToggleExpand"
         @selection-change="onSelectionChange"
       />
 
@@ -468,6 +605,7 @@ const pageList = computed(() => {
       :title="modal.mode === 'create' ? '新增' + title : '编辑' + title"
       :fields="formFields"
       :record="modal.record"
+      :load-field-options="loadFieldOptions"
       @close="modal.visible = false"
       @submit="onModalSubmit"
     />

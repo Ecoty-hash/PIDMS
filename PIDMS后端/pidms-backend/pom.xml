@@ -116,6 +116,20 @@
             <artifactId>spring-security-crypto</artifactId>
         </dependency>
 
+        <!-- Spring Data Redis -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!-- Lettuce 连接池：application.yml 里配了 spring.data.redis.lettuce.pool.*，
+             但 starter 不自带 commons-pool2，缺它连接池配置不生效（只建单个共享连接）。
+             版本由 spring-boot-starter-parent 统一管理，无需写 version。 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

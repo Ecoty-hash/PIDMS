@@ -336,6 +336,7 @@ CREATE TABLE `pm_seal_application` (
 CREATE TABLE `cm_progress` (
   `id`                 BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `project_id`         BIGINT UNSIGNED NOT NULL COMMENT '项目ID',
+  `parent_id`          BIGINT UNSIGNED DEFAULT NULL COMMENT '父节点ID → cm_progress.id，NULL为顶层节点（支持多层子节点）',
   `progress_name`      VARCHAR(200) NOT NULL COMMENT '进度名称',
   `progress_code`      VARCHAR(50)  DEFAULT NULL COMMENT '进度编号',
   `plan_start_date`    DATE         DEFAULT NULL COMMENT '计划开始日期',
@@ -343,7 +344,9 @@ CREATE TABLE `cm_progress` (
   `actual_start_date`  DATE         DEFAULT NULL COMMENT '实际开始日期',
   `actual_end_date`    DATE         DEFAULT NULL COMMENT '实际结束日期',
   `completion_percent` DECIMAL(5,2) NOT NULL DEFAULT 0.00 COMMENT '完成百分比(0-100)',
+  `weight`             DECIMAL(5,2) DEFAULT NULL COMMENT '占总进度百分比(0-100)，仅叶子节点填写，父节点由子节点汇总',
   `progress_status`    VARCHAR(20)  NOT NULL DEFAULT 'in-progress' COMMENT '进度状态：in-progress进行中/completed已完成/delayed延期',
+  `responsible_person` VARCHAR(50)  DEFAULT NULL COMMENT '节点负责人（真实姓名）',
   `remark`             VARCHAR(500) DEFAULT NULL COMMENT '备注',
   `create_by`          VARCHAR(50)  DEFAULT NULL COMMENT '创建人',
   `create_time`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -351,6 +354,7 @@ CREATE TABLE `cm_progress` (
   `update_time`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后修改时间',
   PRIMARY KEY (`id`),
   KEY `idx_progress_project` (`project_id`),
+  KEY `idx_progress_parent` (`parent_id`),
   KEY `idx_progress_status` (`progress_status`),
   CONSTRAINT `fk_progress_project` FOREIGN KEY (`project_id`) REFERENCES `pm_project` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='进度管理表';

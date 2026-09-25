@@ -34,6 +34,25 @@ SELECT COUNT(*) AS cm_quality_inspection_rows FROM cm_quality_inspection;
 SELECT COUNT(*) AS cm_safety_inspection_rows FROM cm_safety_inspection;
 SELECT COUNT(*) AS cm_warning_rule_rows FROM cm_warning_rule;
 
+-- 3.5) cm_progress 进度节点的三个扩展列自检（缺列会让对应字段「保存了看不到」）
+-- 期望下面这条查询返回 3 行：responsible_person / parent_id / weight。
+-- 缺哪一行就执行对应脚本，然后**重启后端**再重试：
+--   responsible_person        → database/upgrade/13_add_progress_responsible_person.sql
+--   parent_id / weight        → database/upgrade/14_add_progress_parent_and_weight.sql
+SELECT column_name AS 列名, column_type AS 类型, is_nullable AS 可空, column_comment AS 说明
+FROM information_schema.columns
+WHERE table_schema = 'pidms' AND table_name = 'cm_progress'
+  AND column_name IN ('responsible_person', 'parent_id', 'weight')
+ORDER BY ordinal_position;
+
+-- 负责人 / 层级 / 权重填报情况（未指定 = NULL 或空串；未填权重的叶子按均分处理）
+SELECT COUNT(*) AS 节点总数,
+       SUM(responsible_person IS NULL OR responsible_person = '') AS 未指定负责人,
+       SUM(parent_id IS NULL) AS 顶层节点,
+       SUM(parent_id IS NOT NULL) AS 子节点,
+       SUM(weight IS NULL) AS 未填权重
+FROM cm_progress;
+
 -- 4) 外键引用完整性抽查（结果为 0 表示无孤儿数据）------------------
 SELECT
   (SELECT COUNT(*) FROM cm_progress p LEFT JOIN pm_project pj ON p.project_id = pj.id WHERE pj.id IS NULL) AS orphan_cm_progress,

@@ -1,303 +1,317 @@
 <script setup>
-import { ref, onMounted } from "vue";
-import { dashboardApi } from "@/api/request.js";
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useRouter } from "vue-router";
+import { workbenchApi } from "@/api/request.js";
 import { useToast } from "@/composables/useToast.js";
-import StatusBadge from "@/components/StatusBadge.vue";
 
+/**
+ * 工作台（个人视角）：只看「与我有关」的事。
+ * 数据来自 GET /api/workbench/overview，全部以当前登录用户为中心：
+ * 待我审批 → 我的项目 → 逾期节点预警 → 最近施工日志 → 我发起的申请。
+ * 全局统计看板在「可视化管理」页。
+ *
+ * 刷新时机：进入页面时拉一次（路由无 keep-alive，从别的模块点回「工作台」会重新挂载）；
+ * 另外在窗口重新获得焦点、浏览器标签页切回来时静默刷新一次——
+ * 否则在别的模块改了数据、切回已打开的工作台，看到的还是旧数字。
+ */
+const router = useRouter();
 const toast = useToast();
 
-const hero = ref(null);
-const rates = ref(null);
-const nodes = ref(null);
-const projects = ref([]);
-const warnings = ref([]);
-const trend = ref({ series: [] });
-const gran = ref("week");
+const data = ref(null);
 const loading = ref(true);
+const error = ref("");
+const fetchedAt = ref(null);
 
-/* ---------- SVG 生成 ---------- */
-function esc(s) {
-  return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const WEATHER = { sunny: "晴", cloudy: "多云", rainy: "雨", snowy: "雪" };
+const APPROVAL = {
+  pending: ["amber", "待审批"],
+  approved: ["green", "已通过"],
+  rejected: ["red", "已驳回"],
+};
+
+const greeting = computed(() => {
+  const h = new Date().getHours();
+  if (h < 6) return "夜深了";
+  if (h < 12) return "早上好";
+  if (h < 14) return "中午好";
+  if (h < 19) return "下午好";
+  return "晚上好";
+});
+
+const todayText = computed(() => {
+  const d = new Date();
+  const week = "日一二三四五六"[d.getDay()];
+  return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日 星期${week}`;
+});
+
+const who = computed(() => data.value?.realName || data.value?.username || "");
+
+/** 数据时间：优先用后端返回的生成时间，取不到就用本地拉到数据的时刻 */
+const updatedAt = computed(() => {
+  const t = data.value?.generatedAt || fetchedAt.value;
+  if (!t) return "";
+  const d = new Date(t);
+  if (Number.isNaN(d.getTime())) return String(t).replace("T", " ").slice(11, 16);
+  const p2 = (n) => String(n).padStart(2, "0");
+  const now = new Date();
+  const hm = `${p2(d.getHours())}:${p2(d.getMinutes())}`;
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  return sameDay ? hm : `${p2(d.getMonth() + 1)}-${p2(d.getDate())} ${hm}`;
+});
+
+const updatedTitle = computed(() => {
+  const t = data.value?.generatedAt || fetchedAt.value;
+  return t ? "数据截至 " + String(t).replace("T", " ").slice(0, 19) : "尚未取到数据";
+});
+
+/** 数字格式化：后端返回的 BigDecimal 序列化为数字或字符串，统一处理 */
+function num(v, digits = 1) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n.toFixed(digits) : (0).toFixed(digits);
 }
 
-function columnGauge(percent) {
-  const H = 170, W = 210, top = 8, bottom = H - 8, colX = 82, colW = 44;
-  const fill = Math.max(0, Math.min(100, percent));
-  const fillH = ((bottom - top) * fill) / 100;
-  const fillY = bottom - fillH;
-  const ticks = [0, 25, 50, 75, 100];
-  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="总体进度 ${fill}%">`;
-  svg += `<g stroke="rgba(29,111,209,.09)" stroke-width="1">`;
-  for (let y = top; y <= bottom; y += (bottom - top) / 4) svg += `<line x1="6" y1="${y}" x2="${W - 6}" y2="${y}"/>`;
-  svg += `</g>`;
-  svg += `<g font-family="Consolas, monospace" font-size="9" fill="#8a99ab" text-anchor="end">`;
-  ticks.forEach((t) => {
-    const y = bottom - ((bottom - top) * t) / 100;
-    svg += `<line x1="${colX - 12}" y1="${y}" x2="${colX}" y2="${y}" stroke="#8a99ab" stroke-width="1"/>`;
-    svg += `<text x="${colX - 16}" y="${y + 3}">${t}</text>`;
-  });
-  svg += `</g>`;
-  svg += `<rect x="${colX}" y="${top}" width="${colW}" height="${bottom - top}" fill="none" stroke="#1d6fd1" stroke-opacity=".55" stroke-width="1.2"/>`;
-  if (fillH > 0) {
-    svg += `<defs><linearGradient id="colFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#de8a0b"/><stop offset="1" stop-color="#b8740a"/></linearGradient></defs>`;
-    svg += `<rect x="${colX + 1.5}" y="${fillY}" width="${colW - 3}" height="${fillH}" fill="url(#colFill)" opacity=".85"/>`;
-  }
-  svg += `<line x1="${colX - 4}" y1="${fillY}" x2="${colX + colW + 4}" y2="${fillY}" stroke="#de8a0b" stroke-width="1.6"/>`;
-  const dimX = colX + colW + 26;
-  svg += `<line x1="${dimX}" y1="${top}" x2="${dimX}" y2="${bottom}" stroke="#8a99ab" stroke-width="1" stroke-dasharray="3 3"/>`;
-  svg += `<path d="M ${dimX - 4} ${top + 6} l 4 -6 l 4 6 M ${dimX - 4} ${bottom - 6} l 4 6 l 4 -6" fill="none" stroke="#8a99ab" stroke-width="1"/>`;
-  svg += `<text x="${dimX + 8}" y="${fillY + 3}" fill="#16324f" font-family="Bahnschrift, Segoe UI, sans-serif" font-size="16" font-weight="600">${fill.toFixed(1)}%</text>`;
-  svg += `<g stroke="#1d6fd1" stroke-opacity=".55" stroke-width="1"><circle cx="${colX + colW / 2}" cy="${top - 6}" r="5" fill="none"/><path d="M ${colX + colW / 2} ${top - 13} v 14 M ${colX + colW / 2 - 7} ${top - 6} h 14"/></g>`;
-  svg += `</svg>`;
-  return svg;
+function pct(v) {
+  return Math.max(0, Math.min(100, Number(v) || 0)) + "%";
 }
 
-function donut(segments) {
-  const R = 62, C = 2 * Math.PI * R, cx = 84, cy = 84;
-  const colors = { 在建: "#1d6fd1", 已完工: "#1e8e5e", 规划中: "#d98c0b", 延期: "#c2402e" };
-  let svg = `<svg viewBox="0 0 168 168">`;
-  svg += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#e6eaee" stroke-width="22"/>`;
-  let offset = 0;
-  segments.forEach((s) => {
-    const len = (C * (s.percent || 0)) / 100;
-    svg += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${colors[s.status] || "#7b8794"}" stroke-width="22" stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
-    offset += len;
-  });
-  svg += `</svg>`;
-  return svg;
+function signed(v) {
+  const n = Number(v) || 0;
+  return (n > 0 ? "+" : "") + n.toFixed(1);
 }
 
-function lineChart(series) {
-  const W = 600, H = 240, padL = 34, padR = 14, padT = 12, padB = 26;
-  const iw = W - padL - padR, ih = H - padT - padB;
-  const X = (i) => padL + (series.length === 1 ? iw / 2 : (i * iw) / (series.length - 1));
-  const Y = (v) => padT + ih - (v / 100) * ih;
-  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="进度趋势折线图">`;
-  svg += `<g stroke="#e6eaee" stroke-width="1">`;
-  [0, 25, 50, 75, 100].forEach((v) => {
-    svg += `<line x1="${padL}" y1="${Y(v)}" x2="${W - padR}" y2="${Y(v)}"/>`;
-    svg += `<text x="${padL - 7}" y="${Y(v) + 3}" fill="#7b8794" font-family="Consolas,monospace" font-size="9.5" text-anchor="end">${v}</text>`;
-  });
-  svg += `</g>`;
-  series.forEach((s, i) => {
-    svg += `<text x="${X(i)}" y="${H - 8}" fill="#7b8794" font-family="Consolas,monospace" font-size="10" text-anchor="middle">${esc(s.label)}</text>`;
-  });
-  const poly = (key, color) => {
-    const pts = series.map((s, i) => `${X(i).toFixed(1)},${Y(s[key]).toFixed(1)}`).join(" ");
-    svg += `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>`;
-    series.forEach((s, i) => svg += `<circle cx="${X(i).toFixed(1)}" cy="${Y(s[key]).toFixed(1)}" r="3.2" fill="${color}"/>`);
-  };
-  poly("plan", "#1d6fd1");
-  poly("actual", "#1e8e5e");
-  svg += `</svg>`;
-  return svg;
+function deltaClass(v) {
+  const n = Number(v) || 0;
+  if (n >= 0) return "is-ok";
+  return n <= -10 ? "is-bad" : "is-warn";
 }
 
-/* ---------- 数据加载 ---------- */
-async function load() {
-  loading.value = true;
+function tagOf(map, key) {
+  return map[key] || ["gray", key || "—"];
+}
+
+function fmtDate(v) {
+  return v ? String(v).slice(0, 10) : "—";
+}
+
+function fmtDateTime(v) {
+  return v ? String(v).replace("T", " ").slice(0, 16) : "—";
+}
+
+function go(moduleKey) {
+  if (moduleKey) router.push(`/${moduleKey}`);
+}
+
+let inflight = false;
+
+/**
+ * silent = 后台静默刷新：不显示骨架、失败也不弹提示（保留上一次的数据即可），
+ * 用于「切回标签页自动刷新」，避免用户正在看的时候整页闪一下。
+ */
+async function load({ silent = false } = {}) {
+  if (inflight) return;
+  inflight = true;
+  if (!silent) loading.value = true;
   try {
-    const [d, r, n, t] = await Promise.all([
-      dashboardApi.overview(),
-      dashboardApi.inspectionStats(),
-      dashboardApi.keyNodes(),
-      dashboardApi.progressTrend(gran.value),
-    ]);
-    hero.value = d;
-    rates.value = r;
-    nodes.value = n;
-    trend.value = t;
-    const [p, w] = await Promise.all([
-      dashboardApi.activeProjects(""),
-      dashboardApi.warningRules(),
-    ]);
-    projects.value = p.list || p;
-    warnings.value = w.list || w;
+    data.value = await workbenchApi.overview();
+    fetchedAt.value = new Date().toISOString();
+    error.value = "";
   } catch (e) {
-    toast.error(e.message || "看板数据加载失败");
+    error.value = e.message || "工作台数据加载失败";
+    if (!silent || !data.value) toast.error(error.value);
   } finally {
+    inflight = false;
     loading.value = false;
   }
 }
 
-async function switchGran(g) {
-  gran.value = g;
-  trend.value = await dashboardApi.progressTrend(g);
+/** 窗口重新获得焦点 / 标签页切回来时，如果页面可见就后台刷新一次 */
+function refreshIfVisible() {
+  if (document.visibilityState !== "visible") return;
+  load({ silent: true });
 }
 
-async function searchProjects(kw) {
-  const p = await dashboardApi.activeProjects(kw);
-  projects.value = p.list || p;
-}
+onMounted(() => {
+  load();
+  document.addEventListener("visibilitychange", refreshIfVisible);
+  window.addEventListener("focus", refreshIfVisible);
+});
 
-const nodeTag = { completed: ["done", "已完成"], current: ["now", "进行中"], pending: ["todo", "未开始"] };
-
-onMounted(load);
+onUnmounted(() => {
+  document.removeEventListener("visibilitychange", refreshIfVisible);
+  window.removeEventListener("focus", refreshIfVisible);
+});
 </script>
 
 <template>
   <div class="rise">
-    <div class="page-head">
-      <div class="page-head__eyebrow">PIDMS · CONSOLE</div>
-      <h1 class="page-head__title">工作台</h1>
+    <div class="page-head ws-head">
+      <div>
+        <div class="page-head__eyebrow">PIDMS · MY WORKSPACE</div>
+        <h1 class="page-head__title">工作台</h1>
+      </div>
+      <div class="ws-head__right">
+        <div class="ws-head__hi">
+          {{ greeting }}<template v-if="who">，{{ who }}</template>
+          <small>{{ todayText }}</small>
+        </div>
+        <div class="ws-head__acts">
+          <span class="ws-stamp" :title="updatedTitle">
+            <template v-if="loading">加载中…</template>
+            <template v-else-if="updatedAt">数据截至 {{ updatedAt }}</template>
+            <template v-else>未取到数据</template>
+          </span>
+          <button class="btn btn--sm" :disabled="loading" @click="load">刷新</button>
+        </div>
+      </div>
     </div>
 
-    <div v-if="loading" class="loading" style="padding: 60px 0;"><span class="spinner"></span>加载看板数据…</div>
+    <div v-if="loading" class="loading"><span class="spinner"></span>加载工作台…</div>
 
-    <template v-else>
-      <!-- 英雄区：结构柱进度仪 -->
-      <section class="panel hero" aria-label="项目总体进度">
-        <div class="hero__main">
-          <div class="hero__eyebrow">OVERALL PROGRESS · 项目总进度</div>
-          <div class="hero__value">{{ hero?.overallProgress?.toFixed(2) }}<small>%</small></div>
-          <div class="hero__delta"><span class="up">▲ {{ hero?.progressDelta }}</span></div>
-          <div class="hero__meta">
-            <div class="hero__meta-item"><div class="v">{{ hero?.ongoingProjects }}</div><div class="k">进行中项目</div></div>
-            <div class="hero__meta-item"><div class="v">{{ hero?.qualityCount }}</div><div class="k">本月质检次数</div></div>
-            <div class="hero__meta-item"><div class="v">{{ hero?.safetyCount }}</div><div class="k">本月安检次数</div></div>
-          </div>
+    <template v-else-if="data">
+      <!-- ============ 个人指标 ============ -->
+      <section class="kpis">
+        <div class="kpi" :class="{ 'is-alert': data.todoTotal > 0 }">
+          <div class="kpi__k">待我审批</div>
+          <div class="kpi__v">{{ data.todoTotal }}<small>项</small></div>
+          <div class="kpi__f">{{ data.todos.length ? data.todos.map((t) => `${t.moduleName} ${t.count}`).join(" · ") : "暂无待办" }}</div>
         </div>
-        <div class="hero__gauge" v-html="columnGauge(hero?.overallProgress || 0)"></div>
+        <div class="kpi">
+          <div class="kpi__k">我的项目</div>
+          <div class="kpi__v">{{ data.myProjectCount }}<small>个</small></div>
+          <div class="kpi__f">平均实际进度 {{ num(data.myAvgProgress) }}%</div>
+        </div>
+        <div class="kpi" :class="{ 'is-alert': data.overdueNodeCount > 0 }">
+          <div class="kpi__k">逾期节点</div>
+          <div class="kpi__v">{{ data.overdueNodeCount }}<small>个</small></div>
+          <div class="kpi__f">{{ data.overdueNodeCount ? "需要重点盯办" : "节点均按计划推进" }}</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi__k">我发起的申请</div>
+          <div class="kpi__v">{{ data.myApplications.length }}<small>条</small></div>
+          <div class="kpi__f">最近 {{ data.myApplications.length ? fmtDate(data.myApplications[0].applyTime) : "—" }}</div>
+        </div>
       </section>
 
-      <!-- 状态分布 + 合格率 -->
+      <!-- ============ 待办 + 预警 ============ -->
       <div class="grid-2">
         <section class="panel">
           <div class="panel__head">
             <div>
-              <div class="panel__eyebrow">PROJECT STATUS</div>
-              <h2 class="panel__title">项目状态分布</h2>
+              <div class="panel__eyebrow">TO APPROVE</div>
+              <h2 class="panel__title">待我审批</h2>
             </div>
-          </div>
-          <div class="panel__body donut-wrap">
-            <div class="donut">
-              <div v-html="donut(hero?.projectStatusDistribution || [])"></div>
-              <div class="donut__center">
-                <div class="t">{{ (hero?.projectStatusDistribution || []).reduce((a, s) => a + s.count, 0) }}</div>
-                <div class="k">总项目数</div>
-              </div>
-            </div>
-            <div class="legend">
-              <div v-for="s in hero?.projectStatusDistribution || []" :key="s.status" class="legend__row">
-                <span class="legend__swatch" :style="{ background: ({ 在建: '#1d6fd1', 已完工: '#1e8e5e', 规划中: '#d98c0b', 延期: '#c2402e' })[s.status] || '#8a99ab' }"></span>
-                <span class="legend__name">{{ s.status }}</span>
-                <span class="legend__pct">{{ s.percent }}%</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="panel__head">
-            <div>
-              <div class="panel__eyebrow">INSPECTION RATE</div>
-              <h2 class="panel__title">检查合格率</h2>
-            </div>
-          </div>
-          <div class="panel__body rate-list">
-            <div class="rate-item">
-              <div class="rate-item__head">
-                <span class="rate-item__name">质量检查合格率</span>
-                <span class="rate-item__val">{{ rates?.qualityRate }}%</span>
-              </div>
-              <div class="rate-track">
-                <div class="rate-track__fill" :style="{ width: (rates?.qualityRate || 0) + '%', background: 'var(--blue)' }"></div>
-                <div class="rate-track__ticks"></div>
-              </div>
-              <div class="rate-item__foot"><span>本月质检 <b>{{ rates?.qualityCount }}</b> 次</span></div>
-            </div>
-            <div class="rate-item">
-              <div class="rate-item__head">
-                <span class="rate-item__name">安全检查合格率</span>
-                <span class="rate-item__val">{{ rates?.safetyRate }}%</span>
-              </div>
-              <div class="rate-track">
-                <div class="rate-track__fill" :style="{ width: (rates?.safetyRate || 0) + '%', background: 'var(--green)' }"></div>
-                <div class="rate-track__ticks"></div>
-              </div>
-              <div class="rate-item__foot"><span>本月安检 <b>{{ rates?.safetyCount }}</b> 次</span></div>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <!-- 趋势 + 关键节点 -->
-      <div class="grid-2">
-        <section class="panel">
-          <div class="panel__head">
-            <div>
-              <div class="panel__eyebrow">PLAN vs ACTUAL</div>
-              <h2 class="panel__title">进度趋势</h2>
-            </div>
-            <div class="seg" role="group" aria-label="时间粒度">
-              <button :class="{ 'is-active': gran === 'day' }" @click="switchGran('day')">自然日</button>
-              <button :class="{ 'is-active': gran === 'week' }" @click="switchGran('week')">自然周</button>
-              <button :class="{ 'is-active': gran === 'month' }" @click="switchGran('month')">自然月</button>
-            </div>
+            <span class="tag" :class="data.todoTotal ? 'tag--amber' : 'tag--gray'">共 {{ data.todoTotal }} 项</span>
           </div>
           <div class="panel__body">
-            <div class="chart__legend">
-              <span><span class="lg-dot" style="background: var(--blue)"></span>计划进度</span>
-              <span><span class="lg-dot" style="background: var(--green)"></span>实际进度</span>
+            <div v-if="!data.todos.length" class="empty">没有需要我审批的单据</div>
+            <div v-else class="todo-list">
+              <button v-for="t in data.todos" :key="t.moduleKey" class="todo" @click="go(t.moduleKey)">
+                <span class="todo__ico"></span>
+                <span class="todo__name">{{ t.moduleName }}</span>
+                <span v-if="t.unassignedCount" class="todo__hint">含 {{ t.unassignedCount }} 条未指派</span>
+                <span class="todo__count">{{ t.count }}</span>
+                <span class="todo__arrow">→</span>
+              </button>
             </div>
-            <div class="chart" v-html="lineChart(trend?.series || [])"></div>
           </div>
         </section>
 
         <section class="panel">
           <div class="panel__head">
             <div>
-              <div class="panel__eyebrow">KEY MILESTONES</div>
-              <h2 class="panel__title">项目关键节点</h2>
+              <div class="panel__eyebrow">OVERDUE NODES</div>
+              <h2 class="panel__title">逾期节点预警</h2>
             </div>
-          </div>
-          <div class="panel__body timeline">
-            <div v-for="n in nodes" :key="n.name" class="tl-item" :class="`is-${nodeTag[n.status]?.[0] || 'todo'}`">
-              <div class="tl-item__head">
-                <span class="tl-item__name">{{ n.name }}</span>
-                <span class="tl-tag" :class="nodeTag[n.status]?.[0] || 'todo'">{{ nodeTag[n.status]?.[1] || '未开始' }}</span>
-              </div>
-              <div class="tl-item__info">
-                <span>计划：<b>{{ n.planStart }}</b> ~ <b>{{ n.planEnd }}</b></span>
-                <span v-if="n.owner">负责人：<b>{{ n.owner }}</b></span>
-                <span>进度：<b>{{ n.progress }}%</b></span>
-              </div>
-              <div class="tl-bar"><i :style="{ width: Math.max(2, n.progress) + '%' }"></i></div>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <!-- 进行中项目 + 预警 -->
-      <div class="grid-2">
-        <section class="panel">
-          <div class="panel__head">
-            <div>
-              <div class="panel__eyebrow">ACTIVE PROJECTS</div>
-              <h2 class="panel__title">进行中项目</h2>
-            </div>
-            <router-link to="/project" style="font-size: 12.5px; color: var(--blue)">查看全部 →</router-link>
+            <router-link to="/progress" class="panel__link">进度管理 →</router-link>
           </div>
           <div class="panel__body">
-            <div class="search" style="margin-bottom: 10px; position: relative;">
-              <span class="search__icon">⌕</span>
-              <input
-                type="search"
-                placeholder="搜索进行中项目…"
-                aria-label="搜索项目"
-                @input="searchProjects($event.target.value)"
-              />
-            </div>
-            <div v-if="!projects.length" class="empty">未找到进行中的项目</div>
-            <div v-else class="list">
-              <div v-for="p in projects" :key="p.id" class="list-item">
-                <div class="list-item__main">
-                  <div class="list-item__name">{{ p.projectName }}</div>
-                  <div class="list-item__sub">{{ p.projectCode }} · 开工 {{ p.startDate }}</div>
-                  <div class="mini-bar"><i :style="{ width: (p.progress || 0) + '%' }"></i></div>
+            <div v-if="!data.risks.length" class="empty">我的项目没有逾期节点</div>
+            <div v-else class="risk-list">
+              <div v-for="r in data.risks" :key="r.nodeId" class="risk" :class="`risk--${r.severity}`">
+                <div class="risk__main">
+                  <div class="risk__name">{{ r.nodeName }}</div>
+                  <div class="risk__sub">{{ r.projectName }}</div>
                 </div>
-                <StatusBadge :value="p.projectStatus" />
-                <span class="badge gray" style="font-family: var(--mono)">{{ p.progress || 0 }}%</span>
+                <div class="risk__meta">
+                  <span class="risk__days">逾期 {{ r.overdueDays }} 天</span>
+                  <span class="risk__plan">计划 {{ fmtDate(r.planEndDate) }}</span>
+                </div>
+              </div>
+              <div v-if="data.overdueNodeCount > data.risks.length" class="risk-more">
+                另有 {{ data.overdueNodeCount - data.risks.length }} 个逾期节点，去<router-link to="/progress">进度管理</router-link>查看
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ============ 我的项目 ============ -->
+      <section class="panel mt20">
+        <div class="panel__head">
+          <div>
+            <div class="panel__eyebrow">MY PROJECTS</div>
+            <h2 class="panel__title">我的项目</h2>
+            <div class="panel__hint">口径：我担任负责人、项目成员，或由我创建的项目</div>
+          </div>
+          <div class="legend-inline">
+            <span><i class="lg-fill"></i>实际进度</span>
+            <span><i class="lg-tick"></i>计划进度</span>
+          </div>
+        </div>
+        <div class="panel__body">
+          <div v-if="!data.myProjects.length" class="empty">还没有与我相关的项目（负责人 / 成员 / 创建人）</div>
+          <div v-else class="proj">
+            <div v-for="p in data.myProjects" :key="p.projectId" class="proj-row">
+              <div class="proj-row__name">
+                <router-link :to="`/project/${p.projectId}/progress`">{{ p.projectName }}</router-link>
+                <div class="proj-row__sub">
+                  {{ p.projectCode || "无编号" }} · 负责人 {{ p.projectLeader || "未指定" }} ·
+                  {{ p.projectStatusName }}
+                </div>
+              </div>
+              <div class="proj-row__bar">
+                <div class="bar" :title="`实际 ${num(p.actualProgress)}% · 计划 ${num(p.planProgress)}%`">
+                  <i class="bar__fill" :style="{ width: pct(p.actualProgress) }"></i>
+                  <span class="bar__tick" :style="{ left: pct(p.planProgress) }"></span>
+                </div>
+              </div>
+              <div class="proj-row__val">
+                <span class="proj-row__num">{{ num(p.actualProgress) }}%</span>
+                <span class="proj-row__delta" :class="deltaClass(p.progressDelta)">{{ signed(p.progressDelta) }}</span>
+              </div>
+              <div class="proj-row__node">
+                <span v-if="p.overdueNodeCount" class="tag tag--red">逾期 {{ p.overdueNodeCount }}</span>
+                <span v-else class="tag tag--gray">{{ p.completedNodeCount }}/{{ p.nodeCount }} 节点</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 动态 + 申请 ============ -->
+      <div class="grid-2">
+        <section class="panel">
+          <div class="panel__head">
+            <div>
+              <div class="panel__eyebrow">RECENT LOGS</div>
+              <h2 class="panel__title">最近施工日志</h2>
+            </div>
+            <router-link to="/construction-log" class="panel__link">全部日志 →</router-link>
+          </div>
+          <div class="panel__body">
+            <div v-if="!data.recentLogs.length" class="empty">我的项目还没有施工日志</div>
+            <div v-else class="timeline">
+              <div v-for="l in data.recentLogs" :key="l.id" class="tl">
+                <div class="tl__head">
+                  <span class="tl__date">{{ fmtDate(l.logDate) }}</span>
+                  <span class="tag tag--blue">{{ WEATHER[l.weather] || l.weather || "—" }}</span>
+                  <span class="tl__who">{{ l.createBy }}</span>
+                </div>
+                <div class="tl__title">{{ l.projectName }}<template v-if="l.planName"> · {{ l.planName }}</template></div>
+                <div class="tl__text">{{ l.constructionContent || l.constructionLocation || "—" }}</div>
               </div>
             </div>
           </div>
@@ -306,128 +320,183 @@ onMounted(load);
         <section class="panel">
           <div class="panel__head">
             <div>
-              <div class="panel__eyebrow">WARNING RULES</div>
-              <h2 class="panel__title">预警规则</h2>
+              <div class="panel__eyebrow">MY REQUESTS</div>
+              <h2 class="panel__title">我发起的申请</h2>
             </div>
-            <router-link to="/warning-rule" style="font-size: 12.5px; color: var(--blue)">管理 →</router-link>
           </div>
-          <div class="panel__body list">
-            <div v-for="w in warnings" :key="w.id" class="warn">
-              <span class="warn__flag" :class="w.level === 'red' ? 'red' : 'yellow'"></span>
-              <div class="warn__main">
-                <div class="warn__name">{{ w.ruleName }}</div>
-                <div class="warn__sub">{{ w.warningType }} · {{ w.projectName }}</div>
+          <div class="panel__body">
+            <div v-if="!data.myApplications.length" class="empty">我还没有发起过申请</div>
+            <div v-else class="apps">
+              <div v-for="a in data.myApplications" :key="a.moduleKey + a.billNo" class="app">
+                <div class="app__main">
+                  <div class="app__name">{{ a.title || a.moduleName }}</div>
+                  <div class="app__sub">{{ a.billNo || "—" }} · {{ a.moduleName }}</div>
+                </div>
+                <div class="app__meta">
+                  <span class="tag" :class="`tag--${tagOf(APPROVAL, a.approvalStatus)[0]}`">{{ tagOf(APPROVAL, a.approvalStatus)[1] }}</span>
+                  <span class="app__time">{{ fmtDateTime(a.applyTime) }}</span>
+                  <span class="app__approver">审批人 {{ a.approver || "未指派" }}</span>
+                </div>
               </div>
-              <StatusBadge :value="w.status" />
             </div>
           </div>
         </section>
       </div>
+
+      <p class="ws-note">{{ data.description }}</p>
     </template>
+
+    <div v-else class="empty">
+      <div>工作台数据加载失败</div>
+      <div v-if="error" class="empty__err">{{ error }}</div>
+      <button class="btn btn--sm" style="margin-top: 12px" @click="load">重试</button>
+    </div>
   </div>
 </template>
 
 <style scoped>
-/* 英雄区（工作台专属，浅色蓝图纸） */
-.hero {
-  background:
-    linear-gradient(rgba(29, 111, 209, .07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(29, 111, 209, .07) 1px, transparent 1px),
-    #fbfcfe;
-  background-size: 22px 22px;
-  color: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  display: grid; grid-template-columns: 1.05fr 1fr; gap: 26px;
-  position: relative; overflow: hidden;
-  box-shadow: var(--shadow);
+.ws-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.ws-head__right { display: flex; align-items: center; gap: 16px; }
+.ws-head__acts { display: flex; align-items: center; gap: 10px; }
+.ws-stamp { font-size: 11.5px; color: var(--muted); font-family: var(--mono); white-space: nowrap; }
+.empty__err {
+  margin-top: 8px; font-size: 12px; color: var(--red); font-family: var(--mono);
+  max-width: 560px; word-break: break-all;
 }
-.hero::after {
-  content: ""; position: absolute; top: 14px; right: 14px; width: 22px; height: 22px;
-  background:
-    linear-gradient(var(--blue), var(--blue)) center/1px 100% no-repeat,
-    linear-gradient(var(--blue), var(--blue)) center/100% 1px no-repeat,
-    radial-gradient(circle at center, transparent 3.5px, var(--blue) 3.5px 4.5px, transparent 4.5px);
-  opacity: .4; pointer-events: none;
+.panel__hint { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+.ws-head__hi { font-size: 13.5px; color: var(--slate); text-align: right; }
+.ws-head__hi small { display: block; font-size: 11.5px; color: var(--muted); font-family: var(--mono); margin-top: 2px; }
+.mt20 { margin-top: 20px; }
+
+/* 指标卡 */
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.kpi {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 16px 18px 14px; box-shadow: var(--shadow-sm); position: relative; overflow: hidden;
 }
-.hero__main { padding: 28px 30px 30px; display: flex; flex-direction: column; justify-content: center; }
-.hero__eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 3px; color: var(--blue); text-transform: uppercase; margin-bottom: 10px; }
-.hero__value { font-family: var(--num); font-weight: 600; font-size: 60px; line-height: 1; color: var(--ink); }
-.hero__value small { font-size: 24px; color: var(--muted); font-weight: 500; }
-.hero__delta { margin-top: 12px; font-size: 13px; color: var(--muted); }
-.hero__delta .up { color: var(--green); font-weight: 600; }
-.hero__meta { display: flex; gap: 28px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
-.hero__meta-item .v { font-family: var(--num); font-size: 22px; font-weight: 600; color: var(--ink); }
-.hero__meta-item .k { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
-.hero__gauge { padding: 20px 24px 22px; display: flex; align-items: center; justify-content: center; border-left: 1px solid var(--line); }
+.kpi::before {
+  content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px;
+  background: var(--line-strong); border-radius: 0 3px 3px 0;
+}
+.kpi.is-alert::before { background: var(--amber); }
+.kpi__k { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.kpi__v { font-family: var(--num); font-size: 30px; font-weight: 600; color: var(--ink); line-height: 1.1; }
+.kpi__v small { font-size: 13px; color: var(--muted); font-weight: 500; margin-left: 3px; }
+.kpi__f {
+  font-size: 11.5px; color: var(--muted); margin-top: 7px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
-.donut-wrap { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
-.donut { position: relative; width: 168px; height: 168px; flex-shrink: 0; }
-.donut svg { width: 100%; height: 100%; }
-.donut__center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
-.donut__center .t { font-family: var(--num); font-size: 26px; font-weight: 600; color: var(--ink); }
-.donut__center .k { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.legend { display: flex; flex-direction: column; gap: 9px; flex: 1; min-width: 150px; }
-.legend__row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-.legend__swatch { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
-.legend__name { color: var(--slate); flex: 1; }
-.legend__pct { font-family: var(--mono); color: var(--ink); font-weight: 600; }
+/* 待我审批 */
+.todo-list { display: flex; flex-direction: column; gap: 8px; }
+.todo {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 11px 13px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--card); cursor: pointer; transition: all .16s;
+}
+.todo:hover { border-color: var(--blue); background: var(--blue-soft); }
+.todo__ico {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--amber); flex-shrink: 0;
+  box-shadow: 0 0 0 3px var(--amber-soft);
+}
+.todo__name { font-size: 13.5px; color: var(--ink); font-weight: 500; }
+.todo__hint { font-size: 11.5px; color: var(--muted); margin-left: 2px; }
+.todo__count {
+  margin-left: auto; font-family: var(--num); font-size: 18px; font-weight: 600; color: var(--amber);
+}
+.todo__arrow { color: var(--muted); font-size: 13px; }
 
-.rate-list { display: flex; flex-direction: column; gap: 22px; }
-.rate-item__head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
-.rate-item__name { font-size: 13px; color: var(--slate); }
-.rate-item__val { font-family: var(--num); font-size: 20px; font-weight: 600; color: var(--ink); }
-.rate-track { position: relative; height: 12px; border-radius: 6px; background: var(--grid); overflow: hidden; }
-.rate-track__fill { height: 100%; border-radius: 6px; transition: width .6s cubic-bezier(.2,.8,.2,1); }
-.rate-track__ticks { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 19%, rgba(255,255,255,.55) 19% 20%); }
-.rate-item__foot { display: flex; gap: 18px; margin-top: 8px; font-size: 12px; color: var(--muted); }
-.rate-item__foot b { font-family: var(--num); color: var(--ink); }
+/* 逾期预警 */
+.risk-list { display: flex; flex-direction: column; }
+.risk { display: flex; align-items: center; gap: 12px; padding: 10px 0 10px 12px; border-bottom: 1px solid var(--line); position: relative; }
+.risk:last-child { border-bottom: none; }
+.risk::before { content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; border-radius: 2px; }
+.risk--serious::before { background: var(--red); }
+.risk--warning::before { background: var(--amber); }
+.risk--notice::before { background: var(--blue); }
+.risk__main { flex: 1; min-width: 0; }
+.risk__name { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.risk__sub {
+  font-size: 11.5px; color: var(--muted); margin-top: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px;
+}
+.risk__meta { text-align: right; flex-shrink: 0; }
+.risk__days { display: block; font-family: var(--num); font-weight: 600; font-size: 14px; color: var(--red); }
+.risk--warning .risk__days { color: var(--amber); }
+.risk--notice .risk__days { color: var(--blue); }
+.risk__plan { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+.risk-more { font-size: 12px; color: var(--muted); padding-top: 10px; }
+.risk-more a { color: var(--blue); }
 
-.seg { display: inline-flex; background: var(--paper); border: 1px solid var(--line); border-radius: 7px; padding: 2px; }
-.seg button { border: none; background: transparent; padding: 4px 12px; border-radius: 5px; font-size: 12.5px; color: var(--muted); cursor: pointer; transition: all .15s; }
-.seg button.is-active { background: var(--ink); color: #fff; }
-.chart__legend { display: flex; gap: 16px; margin-bottom: 8px; font-size: 12.5px; color: var(--slate); }
-.chart__legend .lg-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 6px; }
+/* 我的项目 */
+.legend-inline { display: flex; gap: 16px; font-size: 12px; color: var(--muted); }
+.legend-inline i { display: inline-block; vertical-align: middle; margin-right: 6px; }
+.lg-fill { width: 14px; height: 7px; border-radius: 2px; background: var(--blue); }
+.lg-tick { width: 2px; height: 12px; background: var(--amber); }
+.proj { display: flex; flex-direction: column; }
+.proj-row {
+  display: grid; grid-template-columns: minmax(200px, 1.4fr) minmax(160px, 2fr) 96px 96px;
+  align-items: center; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line);
+}
+.proj-row:last-child { border-bottom: none; }
+.proj-row__name { min-width: 0; }
+.proj-row__name a { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.proj-row__name a:hover { color: var(--blue); }
+.proj-row__sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+.bar { position: relative; height: 9px; border-radius: 5px; background: var(--grid); }
+.bar__fill {
+  position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px;
+  background: linear-gradient(90deg, var(--blue), #3b86e0); transition: width .6s cubic-bezier(.2,.8,.2,1);
+}
+.bar__tick { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--amber); border-radius: 1px; }
+.proj-row__val { display: flex; align-items: baseline; gap: 7px; justify-content: flex-end; }
+.proj-row__num { font-family: var(--num); font-size: 16px; font-weight: 600; color: var(--ink); }
+.proj-row__delta { font-family: var(--mono); font-size: 11.5px; }
+.proj-row__delta.is-ok { color: var(--green); }
+.proj-row__delta.is-warn { color: var(--amber); }
+.proj-row__delta.is-bad { color: var(--red); }
+.proj-row__node { text-align: right; }
 
-.timeline { position: relative; padding-left: 26px; }
-.timeline::before { content: ""; position: absolute; left: 6px; top: 6px; bottom: 6px; width: 2px; background: var(--grid); }
-.tl-item { position: relative; padding-bottom: 18px; }
-.tl-item::before { content: ""; position: absolute; left: -26px; top: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--card); border: 3px solid var(--line); }
-.tl-item.is-done::before { border-color: var(--green); background: var(--green); }
-.tl-item.is-now::before { border-color: var(--blue); background: var(--blue); box-shadow: 0 0 0 4px rgba(29,111,184,.16); }
-.tl-item.is-todo::before { border-color: var(--amber); }
-.tl-item__head { display: flex; align-items: center; gap: 8px; }
-.tl-item__name { font-size: 13.5px; font-weight: 600; color: var(--ink); }
-.tl-tag { font-size: 11px; padding: 1px 8px; border-radius: 10px; }
-.tl-tag.done { background: var(--green-soft); color: var(--green); }
-.tl-tag.now { background: var(--blue-soft); color: var(--blue); }
-.tl-tag.todo { background: var(--amber-soft); color: var(--amber); }
-.tl-item__info { font-size: 12px; color: var(--muted); margin-top: 5px; display: flex; gap: 14px; flex-wrap: wrap; }
-.tl-item__info b { color: var(--slate); font-weight: 500; }
-.tl-bar { margin-top: 8px; height: 5px; border-radius: 3px; background: var(--grid); overflow: hidden; }
-.tl-bar i { display: block; height: 100%; border-radius: 3px; background: var(--blue); }
+/* 施工日志 */
+.timeline { position: relative; padding-left: 18px; }
+.timeline::before { content: ""; position: absolute; left: 3px; top: 8px; bottom: 8px; width: 1px; background: var(--line); }
+.tl { position: relative; padding-bottom: 16px; }
+.tl:last-child { padding-bottom: 0; }
+.tl::before {
+  content: ""; position: absolute; left: -18px; top: 6px; width: 7px; height: 7px;
+  border-radius: 50%; background: var(--card); border: 2px solid var(--blue);
+}
+.tl__head { display: flex; align-items: center; gap: 9px; }
+.tl__date { font-family: var(--mono); font-size: 12px; color: var(--ink); font-weight: 600; }
+.tl__who { font-size: 11.5px; color: var(--muted); margin-left: auto; }
+.tl__title { font-size: 13px; color: var(--ink); font-weight: 500; margin-top: 5px; }
+.tl__text { font-size: 12px; color: var(--slate); margin-top: 3px; }
 
-.list { display: flex; flex-direction: column; }
-.list-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
-.list-item:last-child { border-bottom: none; }
-.list-item__main { flex: 1; min-width: 0; }
-.list-item__name { font-size: 13.5px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.list-item__sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; font-family: var(--mono); }
-.mini-bar { margin-top: 7px; height: 4px; border-radius: 2px; background: var(--grid); overflow: hidden; max-width: 220px; }
-.mini-bar i { display: block; height: 100%; background: var(--blue); }
-.badge { font-size: 11px; padding: 2px 9px; border-radius: 10px; white-space: nowrap; }
-.badge.gray { background: rgba(123,135,148,.12); color: var(--muted); }
-.warn { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
-.warn:last-child { border-bottom: none; }
-.warn__flag { width: 4px; height: 34px; border-radius: 2px; flex-shrink: 0; }
-.warn__flag.yellow { background: var(--amber); }
-.warn__flag.red { background: var(--red); }
-.warn__main { flex: 1; min-width: 0; }
-.warn__name { font-size: 13.5px; font-weight: 600; color: var(--ink); }
-.warn__sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+/* 我的申请 */
+.apps { display: flex; flex-direction: column; }
+.app { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.app:last-child { border-bottom: none; }
+.app__main { flex: 1; min-width: 0; }
+.app__name {
+  font-size: 13.5px; font-weight: 600; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.app__sub { font-size: 11.5px; color: var(--muted); font-family: var(--mono); margin-top: 3px; }
+.app__meta { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.app__time, .app__approver { font-size: 11.5px; color: var(--muted); }
+.ws-note {
+  margin: 18px 2px 0; font-size: 11.5px; color: var(--muted); line-height: 1.7;
+  font-family: var(--mono);
+}
 
+.panel__link { font-size: 12.5px; color: var(--blue); }
+
+@media (max-width: 1200px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .proj-row { grid-template-columns: 1fr; gap: 8px; }
+  .proj-row__val, .proj-row__node { justify-content: flex-start; text-align: left; }
+}
 @media (max-width: 1080px) {
-  .hero { grid-template-columns: 1fr; }
-  .hero__gauge { border-left: none; border-top: 1px solid var(--line); }
+  .grid-2 { grid-template-columns: 1fr; }
 }
 </style>

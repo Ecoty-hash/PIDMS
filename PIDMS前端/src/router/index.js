@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from "vue-router";
 import MainLayout from "@/layout/MainLayout.vue";
 import Dashboard from "@/views/Dashboard.vue";
+import Visualization from "@/views/Visualization.vue";
+import ProjectProgress from "@/views/ProjectProgress.vue";
 import ModulePage from "@/views/ModulePage.vue";
 import Login from "@/views/Login.vue";
 import { MODULES } from "@/config/modules.js";
@@ -29,8 +31,10 @@ const router = createRouter({
       component: MainLayout,
       children: [
         { path: "", name: "dashboard", component: Dashboard, meta: { title: "工作台" } },
-        // 可视化管理在原型中为看板页，映射到工作台
-        { path: "visualization", name: "visualization", component: Dashboard, meta: { title: "可视化管理" } },
+        // 可视化管理：全局统计大屏（工作台是个人视角，两页分工不同）
+        { path: "visualization", name: "visualization", component: Visualization, meta: { title: "可视化管理" } },
+        // 项目进度详情：单个项目的进度总览 + 节点管理
+        { path: "project/:projectId/progress", name: "project-progress", component: ProjectProgress, meta: { title: "项目进度" } },
         ...moduleRoutes,
       ],
     },

@@ -407,6 +407,14 @@
             color: #1890ff;
         }
         
+        .sub-node .sub-info-value.weight {
+            color: #1890ff;
+        }
+        
+        .sub-node .sub-info-value.expected {
+            color: #fa8c16;
+        }
+        
         .sub-node .sub-info-value.percent {
             color: #52c41a;
             font-weight: bold;
@@ -578,6 +586,8 @@
                             <span><span class="info-label">实际完成:</span><span class="info-value date">--</span></span>
                             <span><span class="info-value person">张文琦</span></span>
                             <span><span class="info-value percent">57%</span></span>
+                            <span><span class="info-label">占总进度:</span><span class="info-value percent">100%</span></span>
+                            <span><span class="info-label">期望值:</span><span class="info-value percent">100%</span></span>
                         </div>
                         <span class="node-menu">⋮</span>
                     </div>
@@ -605,7 +615,7 @@
                                 <span class="sub-info-value date">实际: 2025-07-20 ~ 2025-09-15</span>
                                 <span class="sub-info-value person">张文琦</span>
                                 <span class="sub-info-value percent">57%</span>
-                            </div>
+                            <span class="sub-info-value weight">占总进度 100%（自动汇总）</span><span class="sub-info-value expected">期望值 100%</span></div>
                         </div>
                         <div id="sub1-1" style="display: none;">
                             <div class="sub-progress-bar">
@@ -629,7 +639,7 @@
                                     <span class="sub-info-value date">实际: 2025-07-20 ~ 2025-08-20</span>
                                     <span class="sub-info-value person">张文琦</span>
                                     <span class="sub-info-value percent">100%</span>
-                                </div>
+                                <span class="sub-info-value weight">占总进度 50%</span><span class="sub-info-value expected">期望值 100%</span></div>
                             </div>
                             <div id="sub1-1-1" style="display: none;">
                                 <div class="sub-progress-bar level-2">
@@ -654,7 +664,7 @@
                                     <span class="sub-info-value date">实际: 2025-08-05 ~ --</span>
                                     <span class="sub-info-value person">张文琦</span>
                                     <span class="sub-info-value percent">35%</span>
-                                </div>
+                                <span class="sub-info-value weight">占总进度 50%</span><span class="sub-info-value expected">期望值 100%</span></div>
                             </div>
                             <div id="sub1-1-2" style="display: none;">
                                 <div class="sub-progress-bar level-2">
@@ -680,7 +690,7 @@
                                 <span class="sub-info-value date">实际: 2025-10-05 ~ --</span>
                                 <span class="sub-info-value person">张文琦</span>
                                 <span class="sub-info-value percent">45%</span>
-                            </div>
+                            <span class="sub-info-value weight">占总进度 100%（自动汇总）</span><span class="sub-info-value expected">期望值 100%</span></div>
                         </div>
                         <div id="sub1-2" style="display: none;">
                             <div class="sub-progress-bar">
@@ -704,7 +714,7 @@
                                     <span class="sub-info-value date">实际: 2025-10-05 ~ 2026-01-15</span>
                                     <span class="sub-info-value person">张文琦</span>
                                     <span class="sub-info-value percent">100%</span>
-                                </div>
+                                <span class="sub-info-value weight">占总进度 50%</span><span class="sub-info-value expected">期望值 100%</span></div>
                             </div>
                             
                             <div class="sub-node level-2">
@@ -717,7 +727,7 @@
                                     <span class="sub-info-value date">实际: 2026-02-05 ~ --</span>
                                     <span class="sub-info-value person">张文琦</span>
                                     <span class="sub-info-value percent">30%</span>
-                                </div>
+                                <span class="sub-info-value weight">占总进度 50%</span><span class="sub-info-value expected">期望值 100%</span></div>
                             </div>
                             <div id="sub1-2-2" style="display: none;">
                                 <div class="sub-progress-bar level-2">
@@ -743,7 +753,7 @@
                                 <span class="sub-info-value date">实际: --</span>
                                 <span class="sub-info-value person">张文琦</span>
                                 <span class="sub-info-value percent">0%</span>
-                            </div>
+                            <span class="sub-info-value weight">占总进度 100%</span><span class="sub-info-value expected">期望值 45.4%</span></div>
                         </div>
                         <div id="sub1-3" style="display: none;">
                             <div class="warning-bar">

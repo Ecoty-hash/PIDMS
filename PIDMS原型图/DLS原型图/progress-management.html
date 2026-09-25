@@ -273,6 +273,16 @@
             color: #1890ff;
         }
         
+        .node-value.weight,
+        .sub-node-value.weight {
+            color: #1890ff;
+        }
+        
+        .node-value.expected,
+        .sub-node-value.expected {
+            color: #fa8c16;
+        }
+        
         .node-value.percent {
             color: #52c41a;
         }
@@ -405,6 +415,10 @@
                                 <span class="header-label">进度</span>
                                 <span class="header-value percent">57.42%</span>
                             </div>
+                            <div class="header-item">
+                                <span class="header-label">期望值</span>
+                                <span class="header-value percent">100%</span>
+                            </div>
                         </div>
                     </div>
                     <div class="project-body" id="project1">
@@ -431,7 +445,15 @@
                                         <span class="node-label">进度</span>
                                         <span class="node-value percent">35%</span>
                                     </div>
-                                </div>
+                                
+                                    <div class="node-info">
+                                        <span class="node-label">占总进度</span>
+                                        <span class="node-value weight">100%（自动汇总）</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">期望值</span>
+                                        <span class="node-value expected">100%</span>
+                                    </div></div>
                             </li>
                             <ul class="sub-node-list" id="node1-1" style="display: none;">
                                 <li class="sub-node-item">
@@ -440,7 +462,7 @@
                                         <span class="sub-node-value">2025-07-19</span>
                                         <span class="sub-node-value">2025-08-15</span>
                                         <span class="sub-node-value percent">80%</span>
-                                    </div>
+                                    <span class="sub-node-value weight">占总进度 50%</span><span class="sub-node-value expected">期望值 100%</span></div>
                                 </li>
                                 <li class="sub-node-item">
                                     <span class="sub-node-name">环境评估</span>
@@ -448,7 +470,7 @@
                                         <span class="sub-node-value">2025-08-01</span>
                                         <span class="sub-node-value">2025-09-30</span>
                                         <span class="sub-node-value percent">25%</span>
-                                    </div>
+                                    <span class="sub-node-value weight">占总进度 50%</span><span class="sub-node-value expected">期望值 100%</span></div>
                                 </li>
                             </ul>
                             <li class="node-item">
@@ -473,7 +495,15 @@
                                         <span class="node-label">进度</span>
                                         <span class="node-value percent">0%</span>
                                     </div>
-                                </div>
+                                
+                                    <div class="node-info">
+                                        <span class="node-label">占总进度</span>
+                                        <span class="node-value weight">100%</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">期望值</span>
+                                        <span class="node-value expected">100%</span>
+                                    </div></div>
                             </li>
                         </ul>
                     </div>
@@ -503,6 +533,10 @@
                                 <span class="header-label">进度</span>
                                 <span class="header-value percent">50%</span>
                             </div>
+                            <div class="header-item">
+                                <span class="header-label">期望值</span>
+                                <span class="header-value percent">100%</span>
+                            </div>
                         </div>
                     </div>
                     <div class="project-body" id="project2">
@@ -529,7 +563,15 @@
                                         <span class="node-label">进度</span>
                                         <span class="node-value percent">75%</span>
                                     </div>
-                                </div>
+                                
+                                    <div class="node-info">
+                                        <span class="node-label">占总进度</span>
+                                        <span class="node-value weight">100%（自动汇总）</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">期望值</span>
+                                        <span class="node-value expected">100%</span>
+                                    </div></div>
                             </li>
                             <ul class="sub-node-list" id="node2-1" style="display: none;">
                                 <li class="sub-node-item">
@@ -538,7 +580,7 @@
                                         <span class="sub-node-value">2025-02-01</span>
                                         <span class="sub-node-value">2025-02-28</span>
                                         <span class="sub-node-value percent">100%</span>
-                                    </div>
+                                    <span class="sub-node-value weight">占总进度 33.3%</span><span class="sub-node-value expected">期望值 100%</span></div>
                                 </li>
                                 <li class="sub-node-item">
                                     <span class="sub-node-name">沟槽开挖</span>
@@ -546,7 +588,7 @@
                                         <span class="sub-node-value">2025-03-01</span>
                                         <span class="sub-node-value">2025-04-15</span>
                                         <span class="sub-node-value percent">85%</span>
-                                    </div>
+                                    <span class="sub-node-value weight">占总进度 33.3%</span><span class="sub-node-value expected">期望值 100%</span></div>
                                 </li>
                                 <li class="sub-node-item">
                                     <span class="sub-node-name">管道铺设</span>
@@ -554,7 +596,7 @@
                                         <span class="sub-node-value">2025-03-15</span>
                                         <span class="sub-node-value">2025-04-30</span>
                                         <span class="sub-node-value percent">60%</span>
-                                    </div>
+                                    <span class="sub-node-value weight">占总进度 33.4%</span><span class="sub-node-value expected">期望值 100%</span></div>
                                 </li>
                             </ul>
                             <li class="node-item">
@@ -579,7 +621,15 @@
                                         <span class="node-label">进度</span>
                                         <span class="node-value percent">25%</span>
                                     </div>
-                                </div>
+                                
+                                    <div class="node-info">
+                                        <span class="node-label">占总进度</span>
+                                        <span class="node-value weight">100%（自动汇总）</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">期望值</span>
+                                        <span class="node-value expected">100%</span>
+                                    </div></div>
                             </li>
                             <ul class="sub-node-list" id="node2-2" style="display: none;">
                                 <li class="sub-node-item">
@@ -588,7 +638,7 @@
                                         <span class="sub-node-value">2025-05-01</span>
                                         <span class="sub-node-value">2025-05-15</span>
                                         <span class="sub-node-value percent">100%</span>
-                                    </div>
+                                    <span class="sub-node-value weight">占总进度 50%</span><span class="sub-node-value expected">期望值 100%</span></div>
                                 </li>
                                 <li class="sub-node-item">
                                     <span class="sub-node-name">盾构掘进</span>
@@ -596,7 +646,7 @@
                                         <span class="sub-node-value">2025-05-16</span>
                                         <span class="sub-node-value">2025-11-30</span>
                                         <span class="sub-node-value percent">20%</span>
-                                    </div>
+                                    <span class="sub-node-value weight">占总进度 50%</span><span class="sub-node-value expected">期望值 100%</span></div>
                                 </li>
                             </ul>
                             <li class="node-item">
@@ -621,7 +671,15 @@
                                         <span class="node-label">进度</span>
                                         <span class="node-value percent">10%</span>
                                     </div>
-                                </div>
+                                
+                                    <div class="node-info">
+                                        <span class="node-label">占总进度</span>
+                                        <span class="node-value weight">100%</span>
+                                    </div>
+                                    <div class="node-info">
+                                        <span class="node-label">期望值</span>
+                                        <span class="node-value expected">100%</span>
+                                    </div></div>
                             </li>
                         </ul>
                     </div>

@@ -16,7 +16,22 @@
           <td v-if="selectable">
             <input type="checkbox" class="check" :checked="selected.has(row.id)" @change="toggle(row.id)" />
           </td>
-          <td v-for="c in columns" :key="c.name">
+          <td v-for="(c, ci) in columns" :key="c.name">
+            <!-- 树形模块（进度管理）：第一列按层级缩进，可展开/折叠子节点 -->
+            <span
+              v-if="tree && ci === 0"
+              class="tree-grip"
+              :style="{ paddingLeft: (row.__depth || 0) * 16 + 'px' }"
+            >
+              <button
+                v-if="row.__hasChildren"
+                class="tree-toggle"
+                :aria-expanded="row.__expanded ? 'true' : 'false'"
+                :title="row.__expanded ? '收起子节点' : '展开子节点'"
+                @click.stop="$emit('toggle-expand', row)"
+              >{{ row.__expanded ? "▾" : "▸" }}</button>
+              <span v-else class="tree-leaf" aria-hidden="true">·</span>
+            </span>
             <!-- 枚举 → 状态标签；若列带字典 options 则先按 code 解析中文名 -->
             <StatusBadge v-if="c.type === 'enum'" :value="enumText(c, row[c.name])" />
             <!-- 名称/标题类 → 可点击 -->
@@ -26,6 +41,8 @@
               @click="$emit('action', { name: 'view', record: row })"
             >{{ format(row[c.name]) }}</a>
             <span v-else :class="{ num: c.type === 'number', mono: isMonoCol(c.name) }">{{ format(row[c.name]) }}</span>
+            <!-- 自动汇总标记（父节点的完成度 / 占总进度% 由子节点算出来，不是手填的） -->
+            <span v-if="c.autoKey && row[c.autoKey]" class="tag tag--auto" title="由子节点自动汇总">自动</span>
           </td>
           <td v-if="rowActions.length" class="cell--actions">
             <template v-for="(a, i) in rowActions" :key="a">
@@ -56,10 +73,12 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   selectable: { type: Boolean, default: true },
   rowActions: { type: Array, default: () => [] },
+  // 树形表格：行的 __depth / __hasChildren / __expanded 由父组件算好，这里只负责缩进与箭头
+  tree: { type: Boolean, default: false },
   // 可选的按行解析动作文字函数：actionLabel(actionKey, row) => 显示文案（默认原样）
   actionLabel: { type: Function, default: null },
 });
-const emit = defineEmits(["action", "selection-change"]);
+const emit = defineEmits(["action", "selection-change", "toggle-expand"]);
 
 const selected = ref(new Set());
 
@@ -116,3 +135,31 @@ function clearSelection() {
 }
 defineExpose({ clearSelection });
 </script>
+
+<style scoped>
+/* 树形缩进：箭头的占位宽度固定，叶子节点的文字与父节点对齐 */
+.tree-grip { display: inline-flex; align-items: center; margin-right: 4px; }
+.tree-toggle {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--steel);
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+}
+.tree-toggle:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-soft); }
+.tree-leaf { display: inline-block; width: 16px; text-align: center; color: var(--line-strong); }
+/* 「自动」标记：提示该值由子节点汇总得出，不是手填 */
+.tag--auto {
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 11px;
+  background: rgba(138, 153, 171, .14);
+  color: var(--muted);
+}
+.tag--auto::before { display: none; }
+</style>

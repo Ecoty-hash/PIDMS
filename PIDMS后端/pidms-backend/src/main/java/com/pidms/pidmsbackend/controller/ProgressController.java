@@ -5,12 +5,16 @@ import com.pidms.pidmsbackend.dto.ProgressDTO;
 import com.pidms.pidmsbackend.entity.PageInfo;
 import com.pidms.pidmsbackend.entity.ProgressQueryParam;
 import com.pidms.pidmsbackend.service.ProgressService;
+import com.pidms.pidmsbackend.vo.ProgressBoardVO;
+import com.pidms.pidmsbackend.vo.ProgressParentOptionVO;
 import com.pidms.pidmsbackend.vo.ProgressVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 进度管理 接口
@@ -32,6 +36,27 @@ public class ProgressController {
     public Result<PageInfo<ProgressVO>> pageQuery(ProgressQueryParam queryParam) {
         log.info("分页查询进度管理，参数：{}", queryParam);
         return progressService.pageQuery(queryParam);
+    }
+
+    /**
+     * 项目进度详情页数据：项目基础信息 + 进度汇总 + 节点列表 + 负责人候选
+     */
+    @GetMapping("/board")
+    @Operation(summary = "项目进度详情（项目信息 + 进度汇总 + 节点列表）")
+    public Result<ProgressBoardVO> board(@RequestParam Long projectId) {
+        log.info("查询项目进度详情，projectId：{}", projectId);
+        return progressService.board(projectId);
+    }
+
+    /**
+     * 上级节点候选：本项目下的节点（带层级），编辑时排除自身及其子孙
+     */
+    @GetMapping("/parent-options")
+    @Operation(summary = "上级节点候选（按项目过滤，编辑时排除自身及子孙）")
+    public Result<List<ProgressParentOptionVO>> parentOptions(@RequestParam Long projectId,
+                                                              @RequestParam(required = false) Long excludeId) {
+        log.info("查询上级节点候选，projectId：{}，excludeId：{}", projectId, excludeId);
+        return progressService.parentOptions(projectId, excludeId);
     }
 
     /**

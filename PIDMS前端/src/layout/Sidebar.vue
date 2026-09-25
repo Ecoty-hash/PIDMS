@@ -70,7 +70,9 @@ const groups = computed(() => {
 });
 
 function isActive(path) {
-  return route.path === path;
+  if (route.path === path) return true;
+  // 项目进度详情（/project/:id/progress）是「项目」模块下的子页面，同样高亮「项目」
+  return path === "/project" && /^\/project\/[^/]+\/progress$/.test(route.path);
 }
 function emitClose() {
   emit("close");
